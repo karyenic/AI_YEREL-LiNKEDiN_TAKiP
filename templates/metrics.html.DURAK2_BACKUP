@@ -1,16 +1,16 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}Raporlama{% endblock %}
 
 {% block content %}
 
-<section class="panel report-main-panel">
+<section class="panel">
 
   <div class="page-title-row">
     <div>
       <h2>📈 Raporlama ve Günlük Çalışma Merkezi</h2>
       <div class="muted">
-        Aday süreçleri, günlük gelişmeler, hatırlatmalar ve AI destekli çalışma alanı.
+        Aday durumu, günlük gelişmeler, hatırlatmalar ve AI destekli öneriler.
       </div>
     </div>
   </div>
@@ -27,22 +27,14 @@
   <div class="panel report-card report-reminders">
 
     <div class="report-card-header">
-      <div>
-        <h3>🔔 Hatırlatmalar</h3>
-        <div class="report-card-subtitle">
-          Bugün ve yaklaşan takipler
-        </div>
-      </div>
-
+      <h3>🔔 Hatırlatmalar</h3>
       <span class="report-badge">BUGÜN</span>
     </div>
 
     <div id="hatirlatmalar-listesi" class="report-list">
 
       <div class="report-empty">
-        <div class="report-empty-icon">🔔</div>
-        <strong>Şimdilik kayıtlı hatırlatma yok.</strong>
-        <span>Takip motoru devreye alındığında burada gösterilecek.</span>
+        Şimdilik kayıtlı hatırlatma yok.
       </div>
 
     </div>
@@ -53,13 +45,7 @@
   <div class="panel report-card report-journal">
 
     <div class="report-card-header">
-      <div>
-        <h3>📓 Günlük Gelişmeler</h3>
-        <div class="report-card-subtitle">
-          Bugünkü çalışma notunu kaydet
-        </div>
-      </div>
-
+      <h3>📓 Günlük Gelişmeler</h3>
       <span class="report-badge">GÜNLÜK</span>
     </div>
 
@@ -67,26 +53,22 @@
 
       <textarea
         id="gunluk-not"
-        class="journal-textarea"
         placeholder="Bugünkü gelişmeyi yazın...
 
 Örneğin:
 Cengiz ile görüşüldü.
 Mehmet cuma günü tekrar aranacak.
-Ayşe toplantıya olumlu yaklaştı."
-      ></textarea>
+Ayşe toplantıya olumlu yaklaştı."></textarea>
 
       <div class="journal-actions">
 
         <button
-          type="button"
           class="btn-secondary"
           onclick="gunlukNotTemizle()">
           Temizle
         </button>
 
         <button
-          type="button"
           class="btn-gonder"
           onclick="gunlukNotKaydet()">
           📓 Notu Kaydet
@@ -96,7 +78,7 @@ Ayşe toplantıya olumlu yaklaştı."
 
     </div>
 
-    <div id="gunluk-not-durum" class="muted report-status"></div>
+    <div id="gunluk-not-durum" class="muted"></div>
 
   </div>
 
@@ -105,15 +87,9 @@ Ayşe toplantıya olumlu yaklaştı."
 
     <div class="report-card-header">
 
-      <div>
-        <h3>🧠 AI Önerileri</h3>
-        <div class="report-card-subtitle">
-          Çalışma öncelikleri ve sonraki adımlar
-        </div>
-      </div>
+      <h3>🧠 AI Önerileri</h3>
 
       <button
-        type="button"
         class="btn-ai-oner"
         onclick="aiOneriHazirla()">
         🔄 Güncelle
@@ -129,7 +105,6 @@ Ayşe toplantıya olumlu yaklaştı."
 
         <div>
           <strong>AI çalışma önerileri</strong>
-
           <p>
             Günlük gelişmeler ve aday geçmişi veri omurgasına
             bağlandığında burada takip edilmesi gereken kişiler,
@@ -148,23 +123,15 @@ Ayşe toplantıya olumlu yaklaştı."
 
     <div class="report-card-header">
 
-      <div>
-        <h3>🕘 Son Gelişmeler</h3>
-        <div class="report-card-subtitle">
-          En son kayıtlar
-        </div>
-      </div>
+      <h3>🕘 Son Gelişmeler</h3>
 
     </div>
 
     <div id="son-gelismeler" class="report-list">
 
       <div class="report-empty">
-        <div class="report-empty-icon">🕘</div>
-        <strong>Henüz kronolojik gelişme görünmüyor.</strong>
-        <span>
-          Aday olay geçmişi burada kronolojik olarak gösterilecek.
-        </span>
+        Yeni veri omurgası devreye alındığında aday olay geçmişi
+        burada kronolojik olarak gösterilecek.
       </div>
 
     </div>

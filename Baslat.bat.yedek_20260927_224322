@@ -31,6 +31,7 @@ REM 3. IPEX LLM icin zorunlu sistem ayarlari
 set ZES_ENABLE_SYSMAN=1
 set SYCL_CACHE_PERSISTENT=1
 
+REM 4. Intel Arc A-Series icin onerilen performans ayari
 
 REM 5. Proxy'yi devre disi birak (localhost baglantilari icin)
 set no_proxy=localhost,127.0.0.1
@@ -45,6 +46,7 @@ set OLLAMA_FLASH_ATTENTION=false
 echo [0/4] IPEX ortam degiskenleri ayarlandi:
 echo        OLLAMA_NUM_GPU = %OLLAMA_NUM_GPU%  (tum katmanlar GPU'da)
 echo        ONEAPI_DEVICE_SELECTOR = %ONEAPI_DEVICE_SELECTOR%
+echo        SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS = 1
 echo        Kullanilan Ollama: %OLLAMA_EXE%
 
 taskkill /f /im ollama.exe >nul 2>&1

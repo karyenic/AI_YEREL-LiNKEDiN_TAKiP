@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<section class="panel report-main-panel">
+<section class="panel reporting-main">
 
   <div class="page-title-row">
     <div>
@@ -28,10 +28,8 @@
 
     <div class="report-card-header">
       <div>
-        <h3>🔔 Hatırlatmalar</h3>
-        <div class="report-card-subtitle">
-          Bugün ve yaklaşan takipler
-        </div>
+        <div class="report-card-title">🔔 Hatırlatmalar</div>
+        <div class="report-card-subtitle">Bugün ve yaklaşan takipler</div>
       </div>
 
       <span class="report-badge">BUGÜN</span>
@@ -41,8 +39,10 @@
 
       <div class="report-empty">
         <div class="report-empty-icon">🔔</div>
-        <strong>Şimdilik kayıtlı hatırlatma yok.</strong>
-        <span>Takip motoru devreye alındığında burada gösterilecek.</span>
+        <div>
+          <strong>Şimdilik kayıtlı hatırlatma yok.</strong>
+          <p>Takip motoru devreye alındığında burada gösterilecek.</p>
+        </div>
       </div>
 
     </div>
@@ -54,10 +54,8 @@
 
     <div class="report-card-header">
       <div>
-        <h3>📓 Günlük Gelişmeler</h3>
-        <div class="report-card-subtitle">
-          Bugünkü çalışma notunu kaydet
-        </div>
+        <div class="report-card-title">📓 Günlük Gelişmeler</div>
+        <div class="report-card-subtitle">Bugünkü çalışma notunu kaydet</div>
       </div>
 
       <span class="report-badge">GÜNLÜK</span>
@@ -73,20 +71,17 @@
 Örneğin:
 Cengiz ile görüşüldü.
 Mehmet cuma günü tekrar aranacak.
-Ayşe toplantıya olumlu yaklaştı."
-      ></textarea>
+Ayşe toplantıya olumlu yaklaştı."></textarea>
 
       <div class="journal-actions">
 
         <button
-          type="button"
           class="btn-secondary"
           onclick="gunlukNotTemizle()">
           Temizle
         </button>
 
         <button
-          type="button"
           class="btn-gonder"
           onclick="gunlukNotKaydet()">
           📓 Notu Kaydet
@@ -96,7 +91,7 @@ Ayşe toplantıya olumlu yaklaştı."
 
     </div>
 
-    <div id="gunluk-not-durum" class="muted report-status"></div>
+    <div id="gunluk-not-durum" class="muted"></div>
 
   </div>
 
@@ -106,14 +101,11 @@ Ayşe toplantıya olumlu yaklaştı."
     <div class="report-card-header">
 
       <div>
-        <h3>🧠 AI Önerileri</h3>
-        <div class="report-card-subtitle">
-          Çalışma öncelikleri ve sonraki adımlar
-        </div>
+        <div class="report-card-title">🧠 AI Önerileri</div>
+        <div class="report-card-subtitle">Çalışma öncelikleri</div>
       </div>
 
       <button
-        type="button"
         class="btn-ai-oner"
         onclick="aiOneriHazirla()">
         🔄 Güncelle
@@ -149,10 +141,8 @@ Ayşe toplantıya olumlu yaklaştı."
     <div class="report-card-header">
 
       <div>
-        <h3>🕘 Son Gelişmeler</h3>
-        <div class="report-card-subtitle">
-          En son kayıtlar
-        </div>
+        <div class="report-card-title">🕘 Son Gelişmeler</div>
+        <div class="report-card-subtitle">En son kayıtlar</div>
       </div>
 
     </div>
@@ -160,11 +150,17 @@ Ayşe toplantıya olumlu yaklaştı."
     <div id="son-gelismeler" class="report-list">
 
       <div class="report-empty">
+
         <div class="report-empty-icon">🕘</div>
-        <strong>Henüz kronolojik gelişme görünmüyor.</strong>
-        <span>
-          Aday olay geçmişi burada kronolojik olarak gösterilecek.
-        </span>
+
+        <div>
+          <strong>Henüz kronolojik gelişme görünmüyor.</strong>
+
+          <p>
+            Aday olay geçmişi burada kronolojik olarak gösterilecek.
+          </p>
+        </div>
+
       </div>
 
     </div>

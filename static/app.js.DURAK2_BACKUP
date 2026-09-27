@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    ADAY LİSTESİ
    ============================================================ */
 
@@ -23,19 +23,7 @@ async function adaylariYukle() {
 
   tbody.innerHTML = "";
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const metrikFiltresi = urlParams.get("metrik");
-
-  const goruntulenecekAdaylar =
-    metrikFiltresi &&
-    metrikFiltresi !== "toplam" &&
-    metrikFiltresi !== ""
-      ? adaylar.filter(
-          a => Number(a[metrikFiltresi] || 0) === 1
-        )
-      : adaylar;
-
-  for (const a of goruntulenecekAdaylar) {
+  for (const a of adaylar) {
 
     const tr = document.createElement("tr");
     tr.className = "aday-satir";
@@ -1138,95 +1126,59 @@ async function metrikYukle() {
 
   if (!kutu) return;
 
-  try {
-
-    const r =
-      await fetch(
-        "/api/metrics"
-      );
-
-    const m =
-      await r.json();
-
-    const etiketler = {
-      toplam: "Toplam",
-      davet: "Davet",
-      randevu: "Randevu",
-      plan: "Plan",
-      kayit: "Kayıt",
-      takip: "Takip",
-      is_ariyor: "İş Arıyor",
-      hayir: "Hayır"
-    };
-
-    kutu.innerHTML = "";
-
-    for (
-      const [k, lbl]
-      of Object.entries(
-        etiketler
-      )
-    ) {
-
-      const deger =
-        Number(m[k] || 0);
-
-      const aktifSinif =
-        deger > 0
-          ? " metric-active"
-          : "";
-
-      kutu.innerHTML +=
-        `
-        <button
-          type="button"
-          class="metric-card${aktifSinif}"
-          onclick="raporMetrikAc('${k}')"
-          title="${lbl} adaylarını göster"
-        >
-          <div class="val">
-            ${deger}
-          </div>
-
-          <div class="lbl">
-            ${lbl}
-          </div>
-
-          <div class="metric-hint">
-            Görüntüle →
-          </div>
-        </button>
-        `;
-    }
-
-    const oran =
-      document.getElementById(
-        "oranlar"
-      );
-
-    if (oran) {
-
-      oran.textContent =
-        `📊 Davetten Randevuya: %${m.davet_randevu_oran || 0} | Plandan Kayıta: %${m.plan_kayit_oran || 0}`;
-    }
-
-  } catch (e) {
-
-    console.error(
-      "Metrik yükleme hatası:",
-      e
+  const r =
+    await fetch(
+      "/api/metrics"
     );
+
+  const m =
+    await r.json();
+
+  const etiketler = {
+    toplam: "Toplam",
+    davet: "Davet",
+    randevu: "Randevu",
+    plan: "Plan",
+    kayit: "Kayıt",
+    takip: "Takip",
+    is_ariyor: "İş Arıyor",
+    hayir: "Hayır"
+  };
+
+  kutu.innerHTML = "";
+
+  for (
+    const [k, lbl]
+    of Object.entries(
+      etiketler
+    )
+  ) {
+
+    kutu.innerHTML +=
+      `
+      <div class="metric-card">
+        <div class="val">
+          ${m[k] || 0}
+        </div>
+        <div class="lbl">
+          ${lbl}
+        </div>
+      </div>
+      `;
+  }
+
+  const oran =
+    document.getElementById(
+      "oranlar"
+    );
+
+  if (oran) {
+
+    oran.textContent =
+      `📊 Davetten Randevuya: %${m.davet_randevu_oran || 0} | Plandan Kayıta: %${m.plan_kayit_oran || 0}`;
   }
 }
 
-
-function raporMetrikAc(metrik) {
-
-  if (!metrik) return;
-
-  window.location.href =
-    `/?metrik=${encodeURIComponent(metrik)}`;
-}
 
 /* ============================================================
    OLLAMA DURUM PİLİ
@@ -1386,9 +1338,6 @@ document.addEventListener(
   "DOMContentLoaded",
   () => {
 
-    temaUygula();
-    gunlukNotYukle();
-
     adaylariYukle();
     chatYukle();
     modelleriYukle();
@@ -1425,239 +1374,3 @@ document.addEventListener(
     }
   }
 );
-
-/* ============================================================
-   TEMA
-   ============================================================ */
-
-function temaUygula() {
-
-  const kayitliTema =
-    localStorage.getItem(
-      "linkedin_tema"
-    ) || "dark";
-
-  document.documentElement.setAttribute(
-    "data-theme",
-    kayitliTema
-  );
-
-  const buton =
-    document.getElementById(
-      "theme-toggle"
-    );
-
-  if (buton) {
-
-    buton.textContent =
-      kayitliTema === "dark"
-        ? "☀️"
-        : "🌙";
-
-    buton.title =
-      kayitliTema === "dark"
-        ? "Açık temaya geç"
-        : "Koyu temaya geç";
-  }
-}
-
-
-function temaDegistir() {
-
-  const mevcut =
-    document.documentElement.getAttribute(
-      "data-theme"
-    ) || "dark";
-
-  const yeni =
-    mevcut === "dark"
-      ? "light"
-      : "dark";
-
-  localStorage.setItem(
-    "linkedin_tema",
-    yeni
-  );
-
-  document.documentElement.setAttribute(
-    "data-theme",
-    yeni
-  );
-
-  const buton =
-    document.getElementById(
-      "theme-toggle"
-    );
-
-  if (buton) {
-
-    buton.textContent =
-      yeni === "dark"
-        ? "☀️"
-        : "🌙";
-
-    buton.title =
-      yeni === "dark"
-        ? "Açık temaya geç"
-        : "Koyu temaya geç";
-  }
-}
-
-
-/* ============================================================
-   GÜNLÜK RAPOR NOTU
-   ============================================================ */
-
-function gunlukAnahtar() {
-
-  const d =
-    new Date();
-
-  const yyyy =
-    d.getFullYear();
-
-  const mm =
-    String(
-      d.getMonth() + 1
-    ).padStart(2, "0");
-
-  const dd =
-    String(
-      d.getDate()
-    ).padStart(2, "0");
-
-  return `linkedin_gunluk_${yyyy}-${mm}-${dd}`;
-}
-
-
-function gunlukNotYukle() {
-
-  const alan =
-    document.getElementById(
-      "gunluk-not"
-    );
-
-  if (!alan) return;
-
-  const kayit =
-    localStorage.getItem(
-      gunlukAnahtar()
-    );
-
-  if (kayit) {
-
-    alan.value =
-      kayit;
-
-    const durum =
-      document.getElementById(
-        "gunluk-not-durum"
-      );
-
-    if (durum) {
-
-      durum.textContent =
-        "📓 Bugünkü kayıt yüklendi.";
-    }
-  }
-}
-
-
-function gunlukNotKaydet() {
-
-  const alan =
-    document.getElementById(
-      "gunluk-not"
-    );
-
-  if (!alan) return;
-
-  const metin =
-    alan.value.trim();
-
-  const durum =
-    document.getElementById(
-      "gunluk-not-durum"
-    );
-
-  if (!metin) {
-
-    if (durum) {
-
-      durum.textContent =
-        "⚠️ Kaydedilecek bir not yok.";
-    }
-
-    return;
-  }
-
-  localStorage.setItem(
-    gunlukAnahtar(),
-    metin
-  );
-
-  if (durum) {
-
-    durum.textContent =
-      "✅ Bugünkü çalışma notu kaydedildi.";
-  }
-}
-
-
-function gunlukNotTemizle() {
-
-  const alan =
-    document.getElementById(
-      "gunluk-not"
-    );
-
-  if (alan) {
-
-    alan.value = "";
-    alan.focus();
-  }
-
-  const durum =
-    document.getElementById(
-      "gunluk-not-durum"
-    );
-
-  if (durum) {
-
-    durum.textContent =
-      "";
-  }
-}
-
-
-/* ============================================================
-   AI ÖNERİ ALANI
-   ============================================================ */
-
-function aiOneriHazirla() {
-
-  const kutu =
-    document.getElementById(
-      "ai-onerileri"
-    );
-
-  if (!kutu) return;
-
-  kutu.innerHTML =
-    `
-    <div class="ai-placeholder">
-      <div class="ai-icon">🧠</div>
-
-      <div>
-        <strong>AI çalışma önerileri</strong>
-
-        <p>
-          AI öneri motoru bir sonraki çalışma durağında
-          aday geçmişi ve takip verileriyle bağlanacak.
-          Bu aşamada mevcut aday kayıtları korunmaktadır.
-        </p>
-      </div>
-    </div>
-    `;
-}
-
