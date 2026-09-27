@@ -1,7 +1,20 @@
-from flask import Blueprint, jsonify, request
-from core.database import adaylari_getir, aday_ekle, aday_sil, tum_adaylari_sil
+﻿from flask import Blueprint, jsonify, request
 
-bp = Blueprint("candidates", __name__, url_prefix="/api/candidates")
+from core.database import (
+    adaylari_getir,
+    aday_ekle,
+    aday_sil,
+    tum_adaylari_sil,
+    aday_karti_getir,
+    aday_profil_guncelle,
+    aday_gelisme_ekle
+)
+
+bp = Blueprint(
+    "candidates",
+    __name__,
+    url_prefix="/api/candidates"
+)
 
 
 @bp.route("", methods=["GET"])
@@ -12,13 +25,95 @@ def listele():
 @bp.route("", methods=["POST"])
 def ekle():
     d = request.get_json() or {}
+
     ok = aday_ekle(
-        d.get("isim", ""), d.get("tarih", ""), d.get("aciklama", ""),
-        d.get("davet", 0), d.get("randevu", 0), d.get("plan", 0),
-        d.get("kayit", 0), d.get("takip", 0), d.get("hayir", 0),
+        d.get("isim", ""),
+        d.get("tarih", ""),
+        d.get("aciklama", ""),
+        d.get("davet", 0),
+        d.get("randevu", 0),
+        d.get("plan", 0),
+        d.get("kayit", 0),
+        d.get("takip", 0),
+        d.get("hayir", 0),
         d.get("is_ariyor", 0)
     )
+
     return jsonify({"ok": ok})
+
+
+@bp.route("/<int:aday_id>", methods=["GET"])
+def kart(aday_id):
+    data = aday_karti_getir(aday_id)
+
+    if data is None:
+        return jsonify({
+            "ok": False,
+            "error": "Aday bulunamadı."
+        }), 404
+
+    return jsonify({
+        "ok": True,
+        "data": data
+    })
+
+
+@bp.route("/<int:aday_id>/profil", methods=["PUT"])
+def profil_guncelle(aday_id):
+    d = request.get_json() or {}
+
+    ok = aday_profil_guncelle(
+        aday_id,
+        d.get("telefon", ""),
+        d.get("email", ""),
+        d.get("adres", "")
+    )
+
+    if not ok:
+        return jsonify({
+            "ok": False,
+            "error": "Aday profili bulunamadı."
+        }), 404
+
+    return jsonify({
+        "ok": True,
+        "message": "Aday bilgileri güncellendi."
+    })
+
+
+@bp.route("/<int:aday_id>/gelisme", methods=["POST"])
+def gelisme_ekle(aday_id):
+    d = request.get_json() or {}
+
+    tarih = str(d.get("tarih", "")).strip()
+    olay_tipi = str(d.get("olay_tipi", "Not")).strip()
+    olay_metni = str(d.get("olay_metni", "")).strip()
+    durum = str(d.get("durum", "")).strip()
+
+    if not olay_metni:
+        return jsonify({
+            "ok": False,
+            "error": "Gelişme açıklaması boş bırakılamaz."
+        }), 400
+
+    ok, msg = aday_gelisme_ekle(
+        aday_id,
+        tarih,
+        olay_tipi,
+        olay_metni,
+        durum
+    )
+
+    if not ok:
+        return jsonify({
+            "ok": False,
+            "error": msg
+        }), 404
+
+    return jsonify({
+        "ok": True,
+        "message": msg
+    })
 
 
 @bp.route("/<int:aday_id>", methods=["DELETE"])

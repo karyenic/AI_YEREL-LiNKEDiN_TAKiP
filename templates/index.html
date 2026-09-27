@@ -1,13 +1,18 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
+
 {% block title %}Adaylar{% endblock %}
+
 {% block content %}
+
 <section class="panel">
   <h2>Yeni Aday Ekle</h2>
+
   <div class="grid">
     <input id="isim" placeholder="İsim*">
     <input id="tarih" placeholder="gg aa yy">
     <input id="aciklama" placeholder="Açıklama">
   </div>
+
   <div class="checks">
     <label><input type="checkbox" id="davet"> Davet</label>
     <label><input type="checkbox" id="randevu"> Randevu</label>
@@ -17,22 +22,254 @@
     <label><input type="checkbox" id="hayir"> Hayır</label>
     <label><input type="checkbox" id="is_ariyor"> İş Arıyor</label>
   </div>
+
   <button onclick="adayEkle()">✅ Ekle</button>
 </section>
 
+
 <section class="panel">
-  <h2>Aday Listesi <span id="watcher-not" class="muted"></span>
-    <button onclick="excelIceAktar()" style="float:right;background:#1f6feb;font-size:13px;padding:6px 12px;">📥 Excel İçe Aktar</button>
+
+  <h2>
+    Aday Listesi
+
+    <span id="watcher-not" class="muted"></span>
+
+    <button
+      onclick="excelIceAktar()"
+      style="float:right;background:#1f6feb;font-size:13px;padding:6px 12px;"
+    >
+      📥 Excel İçe Aktar
+    </button>
   </h2>
-  <table id="aday-tablo">
-    <thead>
-      <tr>
-        <th>ID</th><th>İsim</th><th>Tarih</th><th>Açıklama</th>
-        <th>Davet</th><th>Randevu</th><th>Plan</th><th>Kayıt</th>
-        <th>Takip</th><th>Hayır</th><th>İş Arıyor</th><th></th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+
+  <div class="table-scroll">
+    <table id="aday-tablo">
+
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>İsim</th>
+          <th>Tarih</th>
+          <th>Açıklama</th>
+          <th>Davet</th>
+          <th>Randevu</th>
+          <th>Plan</th>
+          <th>Kayıt</th>
+          <th>Takip</th>
+          <th>Hayır</th>
+          <th>İş Arıyor</th>
+          <th>İşlem</th>
+        </tr>
+      </thead>
+
+      <tbody></tbody>
+
+    </table>
+  </div>
+
+  <div class="table-hint">
+    💡 Adayın adına veya satırına tıklayarak <b>Aday Kartı</b>nı açabilirsiniz.
+  </div>
+
 </section>
+
+
+<!-- ======================================================
+     ADAY KARTI MODAL
+     ====================================================== -->
+
+<div id="aday-modal" class="modal-overlay hidden">
+
+  <div class="aday-modal">
+
+    <div class="aday-modal-header">
+
+      <div>
+        <div class="aday-modal-kucuk-baslik">ADAY KARTI</div>
+        <h2 id="kart-isim">Aday</h2>
+
+        <span id="kart-durum" class="durum-badge">
+          🟢 Aktif
+        </span>
+      </div>
+
+      <button
+        class="modal-close"
+        onclick="adayKartiKapat()"
+        title="Kapat"
+      >
+        ✕
+      </button>
+
+    </div>
+
+
+    <div class="aday-kart-grid">
+
+      <div class="aday-bilgi-panel">
+
+        <h3>İletişim Bilgileri</h3>
+
+        <label>Telefon</label>
+        <input
+          id="kart-telefon"
+          type="text"
+          placeholder="Telefon"
+        >
+
+        <label>E-posta</label>
+        <input
+          id="kart-email"
+          type="email"
+          placeholder="E-posta"
+        >
+
+        <label>Adres</label>
+        <textarea
+          id="kart-adres"
+          placeholder="Adres"
+          rows="4"
+        ></textarea>
+
+        <button
+          class="btn-blue"
+          onclick="adayProfilKaydet()"
+        >
+          💾 Bilgileri Kaydet
+        </button>
+
+      </div>
+
+
+      <div class="aday-gecmis-panel">
+
+        <div class="gecmis-baslik-satiri">
+
+          <h3>Geçmiş</h3>
+
+          <button
+            class="btn-green"
+            onclick="gelismeFormuAc()"
+          >
+            ＋ GELİŞME EKLE
+          </button>
+
+        </div>
+
+        <div
+          id="aday-gecmis"
+          class="aday-gecmis"
+        ></div>
+
+      </div>
+
+    </div>
+
+
+    <!-- ==================================================
+         GELİŞME FORMU
+         ================================================== -->
+
+    <div
+      id="gelisme-formu"
+      class="gelisme-form hidden"
+    >
+
+      <div class="gelisme-form-header">
+        <h3>Yeni Gelişme</h3>
+
+        <button
+          class="mini-close"
+          onclick="gelismeFormuKapat()"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="gelisme-form-grid">
+
+        <div>
+          <label>Tarih</label>
+          <input
+            id="gelisme-tarih"
+            type="date"
+          >
+        </div>
+
+        <div>
+          <label>Olay Tipi</label>
+
+          <select id="gelisme-tip">
+
+            <option value="Not">📝 Not</option>
+            <option value="Telefon">📞 Telefon</option>
+            <option value="Görüşme">🤝 Görüşme</option>
+            <option value="Mesaj">💬 Mesaj</option>
+            <option value="Randevu">📅 Randevu</option>
+            <option value="Takip">🔔 Takip</option>
+            <option value="Teklif">📄 Teklif</option>
+            <option value="Durum Değişikliği">🔄 Durum Değişikliği</option>
+            <option value="Olumsuz">🔴 Olumsuz</option>
+            <option value="Diğer">📌 Diğer</option>
+
+          </select>
+        </div>
+
+        <div>
+          <label>Durum</label>
+
+          <select id="gelisme-durum">
+
+            <option value="">Durumu değiştirme</option>
+            <option value="🟢 Aktif">🟢 Aktif</option>
+            <option value="🔥 Sıcak">🔥 Sıcak</option>
+            <option value="🟡 Bekliyor">🟡 Bekliyor</option>
+            <option value="❄️ DeepFreeze">❄️ DeepFreeze</option>
+            <option value="🔴 Olumsuz">🔴 Olumsuz</option>
+            <option value="⚫ Arşiv">⚫ Arşiv</option>
+
+          </select>
+        </div>
+
+      </div>
+
+
+      <label>Gelişme / Açıklama</label>
+
+      <textarea
+        id="gelisme-aciklama"
+        rows="5"
+        placeholder="Bugün adayla ne konuşuldu? Ne oldu? Bir sonraki adım nedir?"
+      ></textarea>
+
+
+      <div class="gelisme-form-actions">
+
+        <button
+          class="btn-green"
+          onclick="gelismeKaydet()"
+        >
+          💾 Gelişmeyi Kaydet
+        </button>
+
+        <button
+          class="btn-secondary"
+          onclick="gelismeFormuKapat()"
+        >
+          Vazgeç
+        </button>
+
+      </div>
+
+      <div
+        id="gelisme-mesaj"
+        class="form-message"
+      ></div>
+
+    </div>
+
+  </div>
+
+</div>
+
 {% endblock %}
