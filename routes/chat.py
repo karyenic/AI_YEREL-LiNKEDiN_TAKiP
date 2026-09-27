@@ -3,8 +3,8 @@ import json
 import pandas as pd
 from core.database import (chat_mesajlari_getir, chat_mesaj_ekle, chat_temizle,
                           adaylari_getir, aday_karti_getir)
-from core.ollama_client import chat_stream, sistem_mesaji_olustur, _model_sec
-from config import ADAY_OLAY_LIMIT, ADAY_PROMPT_LIMIT
+from core.ollama_client import chat_stream, sistem_mesaji_olustur
+from config import ADAY_OLAY_LIMIT, ADAY_PROMPT_LIMIT, DEFAULT_MODEL
 
 bp = Blueprint("chat", __name__, url_prefix="/api/chat")
 
@@ -92,7 +92,7 @@ def stream():
         kesildi = False
         try:
             # Router: soru tipine gore model sec
-            model_secili = model if model else _model_sec(kullanici_mesaji)
+            model_secili = model if model else DEFAULT_MODEL  # Frontend'den gelen veya default
             for parca in chat_stream(ollama_msgs, model=model_secili, fallback=fallback, durum=durum):
                 toplam_yanit += parca
                 yield f"data: {json.dumps({'t': parca}, ensure_ascii=False)}\n\n"
