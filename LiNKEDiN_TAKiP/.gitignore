@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Local candidate / Excel data
+Data/
+data/
+*.xlsx
+*.xls
+*.xlsm
+
+# Local AI conversation data
+.gk_studio/
+
+# Logs
+*.log
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Backups
+_BACKUP_BEFORE_GITHUB_RESET/
+_GITHUB_TEMP/
+
+# Temporary files
+*.tmp
+*.bak
+*.backup

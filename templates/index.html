@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Adaylar{% endblock %}
+{% block content %}
+<section class="panel">
+  <h2>Yeni Aday Ekle</h2>
+  <div class="grid">
+    <input id="isim" placeholder="İsim*">
+    <input id="tarih" placeholder="gg aa yy">
+    <input id="aciklama" placeholder="Açıklama">
+  </div>
+  <div class="checks">
+    <label><input type="checkbox" id="davet"> Davet</label>
+    <label><input type="checkbox" id="randevu"> Randevu</label>
+    <label><input type="checkbox" id="plan"> Plan</label>
+    <label><input type="checkbox" id="kayit"> Kayıt</label>
+    <label><input type="checkbox" id="takip"> Takip</label>
+    <label><input type="checkbox" id="hayir"> Hayır</label>
+    <label><input type="checkbox" id="is_ariyor"> İş Arıyor</label>
+  </div>
+  <button onclick="adayEkle()">✅ Ekle</button>
+</section>
+
+<section class="panel">
+  <h2>Aday Listesi <span id="watcher-not" class="muted"></span>
+    <button onclick="excelIceAktar()" style="float:right;background:#1f6feb;font-size:13px;padding:6px 12px;">📥 Excel İçe Aktar</button>
+  </h2>
+  <table id="aday-tablo">
+    <thead>
+      <tr>
+        <th>ID</th><th>İsim</th><th>Tarih</th><th>Açıklama</th>
+        <th>Davet</th><th>Randevu</th><th>Plan</th><th>Kayıt</th>
+        <th>Takip</th><th>Hayır</th><th>İş Arıyor</th><th></th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+{% endblock %}
