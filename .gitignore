@@ -48,3 +48,8 @@ _GITHUB_TEMP/
 *.tmp
 *.bak
 *.backup
+# Yedek dosyalar
+*.yedek*
+*.yedek2*
+*.bak
+*~

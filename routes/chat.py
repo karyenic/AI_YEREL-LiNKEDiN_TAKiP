@@ -26,47 +26,59 @@ def stream():
     fallback = d.get("fallback")
 
     if not kullanici_mesaji:
-        return jsonify({"error": "Mesaj boş"}), 400
+        return jsonify({"error": "Mesaj bos"}), 400
 
-    # Kullanıcı mesajını kaydet
+    # Kullanici mesajini kaydet
     chat_mesaj_ekle("user", kullanici_mesaji)
 
-    # DB özetini hazırla
+    # DB ozetini hazirla - MODELIN SAYMASINI ENGELLE
     adaylar = adaylari_getir()
     if adaylar:
         df = pd.DataFrame(adaylar)
-        cols = ['isim', 'tarih', 'aciklama', 'davet', 'randevu',
-                'plan', 'kayit', 'takip', 'hayir', 'is_ariyor']
+        cols = ["isim", "tarih", "aciklama", "davet", "randevu",
+                "plan", "kayit", "takip", "hayir", "is_ariyor"]
         cols = [c for c in cols if c in df.columns]
-        df_ozet = df[cols].to_string(index=False)
-    else:
-        df_ozet = "(Veritabanı boş)"
+        toplam = len(df)
 
-    # Mesaj geçmişini oluştur (Ollama'ya SADECE role/content gider -
-    # zaman/model/fallback gibi ekstra alanlar mesaj şemasını bozabilir)
+        def _s(k):
+            try:
+                return int(df[k].fillna(0).sum())
+            except Exception:
+                return 0
+
+        basliklar = [
+            f"TOPLAM ADAY: {toplam}",
+            f"Davet: {_s('davet')} | Randevu: {_s('randevu')} | Plan: {_s('plan')} | Kayit: {_s('kayit')}",
+            f"Takip: {_s('takip')} | Hayir: {_s('hayir')} | Is ariyor: {_s('is_ariyor')}",
+            "",
+            f"DETAYLI LISTE ({toplam} aday):",
+        ]
+        df_ozet = "\n".join(basliklar) + "\n" + df[cols].to_string(index=False)
+    else:
+        df_ozet = "(Veritabani bos)"
+
+    # Mesaj gecmisini olustur
     gecmis = chat_mesajlari_getir()
     ollama_msgs = [sistem_mesaji_olustur(df_ozet)]
     for m in gecmis:
         ollama_msgs.append({"role": m["role"], "content": m["content"]})
 
     def generate():
-        toplam = ""
+        toplam_yanit = ""
         durum = {}
+        kesildi = False
         try:
             for parca in chat_stream(ollama_msgs, model=model, fallback=fallback, durum=durum):
-                toplam += parca
-                # SSE formatı: frontend JSON.parse ile {t}/{err}/{done} bekliyor
+                toplam_yanit += parca
                 yield f"data: {json.dumps({'t': parca}, ensure_ascii=False)}\n\n"
             yield f"data: {json.dumps({'done': True, 'model': durum.get('model'), 'fallback': durum.get('fallback', False)}, ensure_ascii=False)}\n\n"
         except GeneratorExit:
-            # İstemci bağlantıyı kesti (Dur butonu / sayfa yenilendi vb.) -
-            # finally'de yield YAPMADAN sessizce çık, aksi halde Werkzeug
-            # "generator ignored GeneratorExit" hatası basar.
+            kesildi = True
             raise
         except Exception as e:
             yield f"data: {json.dumps({'err': str(e)}, ensure_ascii=False)}\n\n"
         finally:
-            if toplam:
-                chat_mesaj_ekle("assistant", toplam, model=durum.get("model"), fallback=durum.get("fallback", False))
+            if toplam_yanit and not kesildi:
+                chat_mesaj_ekle("assistant", toplam_yanit, model=durum.get("model"), fallback=durum.get("fallback", False))
 
     return Response(generate(), mimetype="text/event-stream")

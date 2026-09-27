@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
@@ -23,7 +23,7 @@ OLLAMA_HOST = "http://127.0.0.1:11434"
 # Haritada olmayan model icin DEFAULT_NUM_CTX kullanilir.
 # ------------------------------------------------------------------
 MODEL_CONTEXT_MAP = {
-    "qwen2.5:7b": 8192,
+    "qwen2.5:7b": 16384,
     "qwen2.5:3b": 4096,
     "qwen2.5:14b": 8192,
     "deepseek-r1:7b": 16384,
