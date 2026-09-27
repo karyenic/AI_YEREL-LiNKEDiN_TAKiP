@@ -1,8 +1,10 @@
 from flask import Blueprint, jsonify, request, Response
 import json
 import pandas as pd
-from core.database import chat_mesajlari_getir, chat_mesaj_ekle, chat_temizle, adaylari_getir
-from core.ollama_client import chat_stream, sistem_mesaji_olustur
+from core.database import (chat_mesajlari_getir, chat_mesaj_ekle, chat_temizle,
+                          adaylari_getir, aday_karti_getir)
+from core.ollama_client import chat_stream, sistem_mesaji_olustur, _model_sec
+from config import ADAY_OLAY_LIMIT, ADAY_PROMPT_LIMIT
 
 bp = Blueprint("chat", __name__, url_prefix="/api/chat")
 
@@ -31,7 +33,7 @@ def stream():
     # Kullanici mesajini kaydet
     chat_mesaj_ekle("user", kullanici_mesaji)
 
-    # DB ozetini hazirla - MODELIN SAYMASINI ENGELLE
+    # DB ozetini hazirla - istatistikler + her adayin son olaylari
     adaylar = adaylari_getir()
     if adaylar:
         df = pd.DataFrame(adaylar)
@@ -51,9 +53,30 @@ def stream():
             f"Davet: {_s('davet')} | Randevu: {_s('randevu')} | Plan: {_s('plan')} | Kayit: {_s('kayit')}",
             f"Takip: {_s('takip')} | Hayir: {_s('hayir')} | Is ariyor: {_s('is_ariyor')}",
             "",
-            f"DETAYLI LISTE ({toplam} aday):",
+            f"DETAYLI LISTE (ilk {ADAY_PROMPT_LIMIT} aday, son gelismeleriyle):",
         ]
-        df_ozet = "\n".join(basliklar) + "\n" + df[cols].to_string(index=False)
+
+        # Her aday icin son N olayi ekle
+        satirlar = []
+        for i, aday in enumerate(df.head(ADAY_PROMPT_LIMIT).to_dict("records"), 1):
+            isim = aday.get("isim", "?")
+            try:
+                kart = aday_karti_getir(aday.get("id"))
+                if kart and kart.get("gecmis"):
+                    durum = kart.get("durum", "Aktif")
+                    satirlar.append(f"{i}. {isim} (durum: {durum})")
+                    for olay in kart["gecmis"][-ADAY_OLAY_LIMIT:]:
+                        tarih = olay.get("tarih", "")
+                        tip = olay.get("olay_tipi", "")
+                        metin = olay.get("olay_metni", "")
+                        metin_kisa = metin[:120] + ("..." if len(metin) > 120 else "")
+                        satirlar.append(f"   - {tarih} [{tip}]: {metin_kisa}")
+                else:
+                    satirlar.append(f"{i}. {isim}")
+            except Exception:
+                satirlar.append(f"{i}. {isim}")
+
+        df_ozet = "\n".join(basliklar) + "\n" + "\n".join(satirlar)
     else:
         df_ozet = "(Veritabani bos)"
 
@@ -68,7 +91,9 @@ def stream():
         durum = {}
         kesildi = False
         try:
-            for parca in chat_stream(ollama_msgs, model=model, fallback=fallback, durum=durum):
+            # Router: soru tipine gore model sec
+            model_secili = model if model else _model_sec(kullanici_mesaji)
+            for parca in chat_stream(ollama_msgs, model=model_secili, fallback=fallback, durum=durum):
                 toplam_yanit += parca
                 yield f"data: {json.dumps({'t': parca}, ensure_ascii=False)}\n\n"
             yield f"data: {json.dumps({'done': True, 'model': durum.get('model'), 'fallback': durum.get('fallback', False)}, ensure_ascii=False)}\n\n"

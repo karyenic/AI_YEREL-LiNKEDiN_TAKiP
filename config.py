@@ -49,3 +49,21 @@ DEFAULT_FALLBACK = "qwen2.5:3b"
 FLASK_HOST = "127.0.0.1"
 FLASK_PORT = 5050
 FLASK_DEBUG = False
+
+# ------------------------------------------------------------------
+# MODEL ROUTER - Soru tipine gore model secimi
+# ------------------------------------------------------------------
+MODEL_ROUTER = {
+    "basit":  "qwen2.5:3b",     # Sayisal/basit sorular icin hizli model
+    "normal": "qwen2.5:7b",     # Genel sohbet
+    "analiz": "qwen2.5:7b",     # Derin analiz
+}
+
+# Basit soru tetikleyicileri (bu kelimeler varsa 3b kullanilir)
+BASIT_TETIKLEYICILER = ["kac", "ka?", "toplam", "sayi", "say?", "adet", "liste"]
+
+# ------------------------------------------------------------------
+# ADAY OLAYLARI (context icin)
+# ------------------------------------------------------------------
+ADAY_OLAY_LIMIT = 3           # Her aday icin son N olay prompt'a eklenir
+ADAY_PROMPT_LIMIT = 50        # Prompt'a eklenecek maksimum aday sayisi
