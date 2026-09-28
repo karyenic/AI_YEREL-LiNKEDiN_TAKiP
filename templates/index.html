@@ -31,8 +31,7 @@
 
   <h2>
     Aday Listesi
-
-    <span id="watcher-not" class="muted"></span>
+<span id="watcher-not" class="muted"></span>
 
     <button
       onclick="excelIceAktar()"
@@ -41,6 +40,16 @@
       📥 Excel İçe Aktar
     </button>
   </h2>
+
+  <div style="margin-bottom:12px;">
+    <input
+      id="aday-ara"
+      type="text"
+      placeholder="Ara: isim, aciklama, tarih..."
+      style="width:100%; padding:12px; font-size:15px; background:#0d1117; color:#c9d1d9; border:1px solid #30363d; border-radius:6px;"
+      oninput="adayAra()"
+    >
+  </div>
 
   <div class="table-scroll">
     <table id="aday-tablo">

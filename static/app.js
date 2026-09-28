@@ -1679,3 +1679,32 @@ function aiOneriHazirla() {
     `;
 }
 
+// ============================================================
+// ADAY ARAMA
+// ============================================================
+function adayAra() {
+    const arama = document
+        .getElementById("aday-ara")
+        .value
+        .toLowerCase()
+        .trim();
+
+    const satirlar = document.querySelectorAll(
+        "#aday-tablo tbody tr"
+    );
+
+    let gorunen = 0;
+
+    satirlar.forEach(satir => {
+        const metin = satir.textContent.toLowerCase();
+
+        if (arama === "" || metin.includes(arama)) {
+            satir.style.display = "";
+            gorunen++;
+        } else {
+            satir.style.display = "none";
+        }
+    });
+
+    console.log(`Arama: "${arama}" -> ${gorunen}/${satirlar.length} aday`);
+}
