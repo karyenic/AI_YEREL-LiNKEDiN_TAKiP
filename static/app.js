@@ -1708,3 +1708,108 @@ function adayAra() {
 
     console.log(`Arama: "${arama}" -> ${gorunen}/${satirlar.length} aday`);
 }
+
+// ============================================================
+// SUTUN SIRALAMA
+// ============================================================
+let _siralaDurum = { kolon: null, yon: "asc" };
+
+function sirala(kolon) {
+    const tbody = document.querySelector("#aday-tablo tbody");
+    if (!tbody) return;
+    
+    const satirlar = Array.from(tbody.querySelectorAll("tr"));
+    if (satirlar.length === 0) return;
+    
+    // Yon belirleme: ayni kolona tiklandiysa ters cevir
+    let yon = "asc";
+    if (_siralaDurum.kolon === kolon) {
+        yon = _siralaDurum.yon === "asc" ? "desc" : "asc";
+    }
+    _siralaDurum = { kolon, yon };
+    
+    // Kolon index'ini bul
+    const ths = document.querySelectorAll("#aday-tablo thead th");
+    let idx = -1;
+    ths.forEach((th, i) => {
+        if (th.textContent.toLowerCase().includes(kolon.toLowerCase().replace("_", " "))) {
+            if (idx === -1) idx = i;
+        }
+    });
+    // Fallback: kolon adlarini elle esle
+    const kolonMap = {
+        "id": 0, "isim": 1, "tarih": 2, "aciklama": 3,
+        "davet": 4, "randevu": 5, "plan": 6, "kayit": 7,
+        "takip": 8, "hayir": 9, "is_ariyor": 10
+    };
+    if (kolonMap[kolon] !== undefined) idx = kolonMap[kolon];
+    if (idx === -1) return;
+    
+    // Tarih parse (gg aa yy)
+    function _tarihParse(s) {
+        s = (s || "").trim();
+        const m = s.match(/^(\d{1,2})\s+(\d{1,2})\s+(\d{2,4})$/);
+        if (!m) return 0;
+        let gun = parseInt(m[1]);
+        let ay = parseInt(m[2]);
+        let yil = parseInt(m[3]);
+        if (yil < 100) yil += 2000;
+        return new Date(yil, ay - 1, gun).getTime();
+    }
+    
+    // Turkce karakter normalize
+    function _norm(s) {
+        return (s || "").toString().toLowerCase()
+            .replace(/\u0130/g, "i")
+            .replace(/\u0131/g, "i")
+            .replace(/\u00e7/g, "c")
+            .replace(/\u015f/g, "s")
+            .replace(/\u011f/g, "g")
+            .replace(/\u00fc/g, "u")
+            .replace(/\u00f6/g, "o");
+    }
+    
+    // Sirala
+    satirlar.sort((a, b) => {
+        const aCell = a.children[idx];
+        const bCell = b.children[idx];
+        if (!aCell || !bCell) return 0;
+        
+        const aTxt = aCell.textContent.trim();
+        const bTxt = bCell.textContent.trim();
+        
+        let aVal, bVal;
+        if (kolon === "tarih") {
+            aVal = _tarihParse(aTxt);
+            bVal = _tarihParse(bTxt);
+        } else if (["davet", "randevu", "plan", "kayit", "takip", "hayir", "is_ariyor"].includes(kolon)) {
+            aVal = aTxt === "?" ? 1 : 0;
+            bVal = bTxt === "?" ? 1 : 0;
+        } else if (kolon === "id") {
+            aVal = parseInt(aTxt) || 0;
+            bVal = parseInt(bTxt) || 0;
+        } else {
+            aVal = _norm(aTxt);
+            bVal = _norm(bTxt);
+        }
+        
+        if (aVal < bVal) return yon === "asc" ? -1 : 1;
+        if (aVal > bVal) return yon === "asc" ? 1 : -1;
+        return 0;
+    });
+    
+    // Yeniden yerlestir
+    satirlar.forEach(tr => tbody.appendChild(tr));
+    
+        // Ok isaretlerini guncelle
+    ths.forEach((th, i) => {
+        // Once eski oklari ve '?' karakterlerini temizle
+        th.textContent = th.textContent
+            .replace(/\s*[\^v?]+$/, "")
+            .trim();
+        // Sadece aktif kolona ok ekle
+        if (i === idx) {
+            th.textContent += yon === "asc" ? " ^" : " v";
+        }
+    });
+}

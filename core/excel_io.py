@@ -19,14 +19,22 @@ def _evet_mi(val):
 
 
 def _satir_hash(isim, tarih, aciklama):
-    raw = f"{isim}|{tarih}|{aciklama}".encode("utf-8")
+    """Mukerrer kontrolu icin hash.
+    Tarih hash'e DAHIL EDILMEZ - cunku:
+    - Excel tarih formatlari farkli olabilir (gg aa yy vs gg/aa/yyyy)
+    - pd.to_datetime bazen farkli yorumlar
+    - Ayni aday farkli tarihle 2 kez eklenmesin
+    """
+    isim_norm = (isim or "").strip().lower()
+    aciklama_norm = (aciklama or "").strip().lower()
+    raw = f"{isim_norm}|{aciklama_norm}".encode("utf-8")
     return hashlib.md5(raw).hexdigest()
 
 
 def excel_ice_aktar(dosya_yolu):
     """Excel dosyasını okur ve yeni adayları DB'ye ekler. Duplicate'leri atlar."""
     try:
-        df = pd.read_excel(dosya_yolu, header=1)
+        df = pd.read_excel(dosya_yolu, header=0)
         df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
     except Exception as e:
         return False, f"Excel okuma hatası: {e}"
