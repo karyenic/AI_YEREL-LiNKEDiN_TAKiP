@@ -82,8 +82,10 @@ def stream():
 
     # Mesaj gecmisini olustur
     gecmis = chat_mesajlari_getir()
+    # Son 6 mesaj (3 soru + 3 cevap) - KV cache kirlenmesini onler
+    son_gecmis = gecmis[-6:] if len(gecmis) > 6 else gecmis
     ollama_msgs = [sistem_mesaji_olustur(df_ozet)]
-    for m in gecmis:
+    for m in son_gecmis:
         ollama_msgs.append({"role": m["role"], "content": m["content"]})
 
     def generate():

@@ -43,7 +43,7 @@ KEEP_ALIVE = "30m"
 PRIMARY_MODELS = ["qwen2.5:7b"]
 FALLBACK_MODELS = ["qwen2.5:3b"]
 DEFAULT_MODEL = "qwen2.5:7b"
-DEFAULT_FALLBACK = "qwen2.5:3b"
+DEFAULT_FALLBACK = "qwen2.5:7b"
 
 # Flask
 FLASK_HOST = "127.0.0.1"

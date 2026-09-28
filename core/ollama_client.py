@@ -98,12 +98,19 @@ def chat_stream(mesajlar, model=DEFAULT_MODEL, fallback=DEFAULT_FALLBACK, durum=
         num_ctx = _get_num_ctx(m)
         print(f"{m} cagriliyor (num_ctx: {num_ctx})...")
         full = ollama.chat(
-            model=m,
-            messages=mesajlar,
-            options={"num_ctx": num_ctx},
-            keep_alive=KEEP_ALIVE,
-            stream=True
-        )
+    model=m,
+    messages=mesajlar,
+    options={
+        "num_ctx": num_ctx,
+        "temperature": 0.7,
+        "top_p": 0.9,
+        "top_k": 40,
+        "repeat_penalty": 1.15,
+        "repeat_last_n": 256,
+    },
+    keep_alive=KEEP_ALIVE,
+    stream=True
+)
         ilk = True
         for chunk in full:
             if ilk:
