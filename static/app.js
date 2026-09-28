@@ -620,9 +620,27 @@ async function chatYukle() {
 
   if (!kutu) return;
 
+    // Filtre dropdown degerini al
+  const filtreEl =
+    document.getElementById("kategori-filtre");
+
+  const filtre =
+    filtreEl ? filtreEl.value : "hepsi";
+
   kutu.innerHTML = "";
 
   for (const m of msgs) {
+
+    // Kategori filtresi
+    const mesajKat =
+      m.kategori || "sohbet";
+
+    if (
+      filtre !== "hepsi" &&
+      mesajKat !== filtre
+    ) {
+      continue;
+    }
 
     mesajGoster(
       m.role,

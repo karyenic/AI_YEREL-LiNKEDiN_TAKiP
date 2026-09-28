@@ -11,6 +11,18 @@
     <h2>💬 AI Asistan</h2>
 
     <div class="chat-controls">
+             <select id="kategori-filtre" onchange="chatYukle()" title="Kategoriye göre filtrele">
+         <option value="hepsi">🔵 Tümü</option>
+         <option value="istatistik">📊 İstatistik</option>
+         <option value="sorgu">🔍 Sorgu</option>
+         <option value="oneri">🎯 Öneri</option>
+         <option value="analiz">🧠 Analiz</option>
+         <option value="sohbet">💬 Sohbet</option>
+       </select>
+
+      <select id="model-select"></select>
+
+      <button onclick="chatTemizle()">
       <select id="model-select"></select>
 
       <button onclick="chatTemizle()">
