@@ -1,4 +1,4 @@
-﻿import sqlite3
+import sqlite3
 from datetime import datetime
 from config import ADAY_DB, CHAT_DB
 
@@ -222,6 +222,27 @@ def init_all():
             c.execute(
                 "ALTER TABLE sohbet_loglari ADD COLUMN fallback INTEGER DEFAULT 0"
             )
+
+        if "kategori" not in mevcut:
+            c.execute(
+                "ALTER TABLE sohbet_loglari ADD COLUMN kategori TEXT DEFAULT 'sohbet'"
+            )
+            # Mevcut mesajlari geriye donuk kategorize et
+            print("Mevcut mesajlar kategorize ediliyor...")
+            tum_mesajlar = c.execute(
+                "SELECT id, rol, icerik FROM sohbet_loglari"
+            ).fetchall()
+            for m in tum_mesajlar:
+                k = _kategori_bul(m["icerik"], m["rol"])
+                c.execute(
+                    "UPDATE sohbet_loglari SET kategori=? WHERE id=?",
+                    (k, m["id"])
+                )
+            print(f"{len(tum_mesajlar)} mesaj kategorize edildi")
+
+        c.execute(
+            "CREATE INDEX IF NOT EXISTS idx_sohbet_kategori ON sohbet_loglari(kategori)"
+        )
 
         c.commit()
 
@@ -633,11 +654,48 @@ def aday_gelisme_ekle(
 # Chat İşlemleri
 # ============================================================
 
+def _kategori_bul(mesaj, rol):
+    """Mesaji keyword bazli kategorize eder.
+    Kategoriler: sohbet, istatistik, sorgu, oneri, analiz
+    Oncelik sirasi: oneri > analiz > istatistik > sorgu > sohbet
+    """
+    if not mesaj:
+        return "sohbet"
+
+    m = mesaj.lower()
+    # Turkce karakter normalizasyonu
+    tr_map = str.maketrans("İIıçşğüöÇŞĞÜÖ", "iiicsguoCSGUO")
+    m = mesaj.translate(tr_map).lower()
+    if rol == "assistant":
+        # Cevap icerigi bazli
+        if "oneri:" in m or "aksiyon:" in m:
+            return "oneri"
+        if any(k in m for k in ["funnel", "analiz", "trend", "oran", "donusum"]):
+            return "analiz"
+        return "sohbet"
+
+    # Kullanici mesaji - ONERI once (daha guclu sinyal)
+    if any(k in m for k in ["degerlendir", "oner", "odaklan", "oncelik",
+                            "strateji", "planla", "yapalim", "yapmali",
+                            "ne yap", "nasil ilerle", "kimlere odak"]):
+        return "oneri"
+    # ANALIZ
+    if any(k in m for k in ["analiz", "funnel", "trend", "karsilastir", "rapor"]):
+        return "analiz"
+    # ISTATISTIK
+    if any(k in m for k in ["kac", "toplam", "sayi", "adet", "liste", "kactane"]):
+        return "istatistik"
+    # SORGU
+    if any(k in m for k in ["kim", "nerede", "hangi", "ne zaman", "baska", "neler"]):
+        return "sorgu"
+    return "sohbet"
+
+
 def chat_mesajlari_getir():
     with _conn(CHAT_DB) as c:
         rows = c.execute(
             '''
-            SELECT rol, icerik, zaman, model, fallback
+            SELECT rol, icerik, zaman, model, fallback, kategori
             FROM sohbet_loglari
             ORDER BY id ASC
             '''
@@ -649,7 +707,8 @@ def chat_mesajlari_getir():
             "content": r["icerik"],
             "zaman": r["zaman"],
             "model": r["model"],
-            "fallback": bool(r["fallback"])
+            "fallback": bool(r["fallback"]),
+            "kategori": r["kategori"] or "sohbet"
         }
         for r in rows
     ]
@@ -659,21 +718,27 @@ def chat_mesaj_ekle(
     rol,
     icerik,
     model=None,
-    fallback=False
+    fallback=False,
+    kategori=None
 ):
+    # Kategori verilmediyse otomatik bul
+    if kategori is None:
+        kategori = _kategori_bul(icerik, rol)
+
     with _conn(CHAT_DB) as c:
         c.execute(
             '''
             INSERT INTO sohbet_loglari
-            (rol, icerik, zaman, model, fallback)
-            VALUES (?, ?, ?, ?, ?)
+            (rol, icerik, zaman, model, fallback, kategori)
+            VALUES (?, ?, ?, ?, ?, ?)
             ''',
             (
                 rol,
                 icerik,
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 model,
-                int(bool(fallback))
+                int(bool(fallback)),
+                kategori
             )
         )
         c.commit()
