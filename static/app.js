@@ -2086,3 +2086,47 @@ async function adaySilOnay(id, isim) {
     alert(`❌ Silme hatası: ${e}`);
   }
 }
+
+
+
+// ═══════════════════════════════════════════════════════════
+// YAZDIRMA MODU
+// ═══════════════════════════════════════════════════════════
+function yazdirmaModu() {
+  // Tarih damgasını ayarla
+  const tarihEl = document.getElementById("print-tarih");
+  if (tarihEl) {
+    const simdi = new Date();
+    const formatli = simdi.toLocaleString("tr-TR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+    tarihEl.textContent = "Yazdırma tarihi: " + formatli;
+  }
+
+  // Sayfa başlığını geçici değiştir (PDF dosya adı için)
+  const eskiBaslik = document.title;
+  const simdi = new Date();
+  const tarihKisa = simdi.toLocaleDateString("tr-TR").replace(/\./g, "-");
+  document.title = `LinkedIn_Aday_Listesi_${tarihKisa}`;
+
+  // Yazdır
+  window.print();
+
+  // Başlığı geri al
+  setTimeout(() => {
+    document.title = eskiBaslik;
+  }, 1500);
+}
+
+
+// Ctrl+P kısayolu (opsiyonel)
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "p") {
+    e.preventDefault();
+    yazdirmaModu();
+  }
+});

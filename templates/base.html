@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
@@ -22,15 +22,19 @@
     <a href="/metrics">Raporlama</a>
     <a href="/api/excel/export" class="btn-export">⬇ Excel İndir</a>
 
+    <button onclick="yazdirmaModu()" class="btn-yazdir" title="Yazdır (Ctrl+P)">
+      🖨️ Yazdır
+    </button>
+
+    <a href="/api/word/export" class="btn-word" title="Word olarak indir">
+      📄 Word
+    </a>
+
     <span id="cpu-badge" class="pill pill-mini">CPU --%</span>
     <span id="gpu-badge" class="pill pill-mini">GPU --</span>
     <span id="ollama-pill" class="pill pill-warn">⏳ Ollama</span>
 
-    <button
-      id="theme-toggle"
-      class="theme-toggle"
-      onclick="temaDegistir()"
-      title="Tema değiştir">
+    <button id="theme-toggle" class="theme-toggle" onclick="temaDegistir()" title="Tema değiştir">
       🌙
     </button>
 
