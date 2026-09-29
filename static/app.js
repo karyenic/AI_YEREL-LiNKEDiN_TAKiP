@@ -2130,3 +2130,112 @@ document.addEventListener("keydown", (e) => {
     yazdirmaModu();
   }
 });
+
+
+
+// ═══════════════════════════════════════════════════════════
+// KEEP'TEN AKTAR
+// ═══════════════════════════════════════════════════════════
+function keepModalAc() {
+  const modal = document.getElementById("keep-modal");
+  if (modal) {
+    modal.classList.remove("hidden");
+    const ta = document.getElementById("keep-metin");
+    if (ta) {
+      ta.value = "";
+      ta.focus();
+    }
+    const onizleme = document.getElementById("keep-onizleme");
+    if (onizleme) onizleme.classList.add("hidden");
+  }
+}
+
+function keepModalKapat() {
+  const modal = document.getElementById("keep-modal");
+  if (modal) modal.classList.add("hidden");
+}
+
+async function keepOnizle() {
+  const metin = document.getElementById("keep-metin").value.trim();
+  if (!metin) {
+    alert("Lütfen Keep notunu yapıştırın.");
+    return;
+  }
+
+  try {
+    const r = await fetch("/api/keep/parse", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({metin})
+    });
+    const d = await r.json();
+
+    if (!d.ok) {
+      alert("❌ " + (d.error || "Parse hatası"));
+      return;
+    }
+
+    // Önizleme göster
+    const kutu = document.getElementById("keep-onizleme-icerik");
+    kutu.innerHTML = `
+      <div style="margin-bottom:8px;">
+        <strong>Toplam:</strong> ${d.toplam} aday
+        &nbsp;|&nbsp;
+        <span style="color:#3fb950;">🟢 ${d.yesil} yeşil</span>
+        &nbsp;|&nbsp;
+        <span style="color:#d29922;">🟡 ${d.sari} sarı</span>
+      </div>
+      <div style="max-height:200px;overflow-y:auto;font-size:13px;line-height:1.6;">
+        ${d.adaylar.map(a => `
+          <div style="padding:4px 0;border-bottom:1px solid #21262d;">
+            <strong>${a.isim}</strong>
+            ${a.durum === 'yeşil' ? '🟢' : a.durum === 'sarı' ? '🟡' : ''}
+            <span style="color:#8b949e;"> — ${a.aciklama}</span>
+          </div>
+        `).join("")}
+      </div>
+    `;
+    document.getElementById("keep-onizleme").classList.remove("hidden");
+
+  } catch (e) {
+    alert("❌ Hata: " + e);
+  }
+}
+
+async function keepAktar() {
+  const metin = document.getElementById("keep-metin").value.trim();
+  if (!metin) {
+    alert("Lütfen Keep notunu yapıştırın.");
+    return;
+  }
+
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = "⏳ Aktarılıyor...";
+
+  try {
+    const r = await fetch("/api/keep/import", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({metin})
+    });
+    const d = await r.json();
+
+    if (!d.ok) {
+      alert("❌ " + (d.error || "Aktarma hatası"));
+      return;
+    }
+
+    alert("✅ " + d.mesaj);
+    keepModalKapat();
+
+    // Tabloyu yenile
+    if (typeof adaylariYukle === "function") adaylariYukle();
+
+  } catch (e) {
+    alert("❌ Hata: " + e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "✅ Aktar";
+  }
+}

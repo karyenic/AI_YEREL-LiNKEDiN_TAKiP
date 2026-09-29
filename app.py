@@ -1,4 +1,4 @@
-﻿import threading
+import threading
 import time
 import webbrowser
 from pathlib import Path
@@ -17,6 +17,8 @@ from routes.candidates import bp as candidates_bp
 from routes.excel import bp as excel_bp
 from routes.chat import bp as chat_bp
 from routes.metrics import bp as metrics_bp
+from routes.keep import bp as keep_bp
+from routes.word import bp as word_bp
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
@@ -25,6 +27,8 @@ app.register_blueprint(candidates_bp)
 app.register_blueprint(excel_bp)
 app.register_blueprint(chat_bp)
 app.register_blueprint(metrics_bp)
+app.register_blueprint(keep_bp)
+app.register_blueprint(word_bp)
 
 
 class ExcelHandler(FileSystemEventHandler):

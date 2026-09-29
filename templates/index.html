@@ -41,9 +41,16 @@
 
     <button
       onclick="excelIceAktar()"
-      style="float:right;background:#1f6feb;font-size:13px;padding:6px 12px;"
+      style="float:right;background:#1f6feb;font-size:13px;padding:6px 12px;margin-left:6px;"
     >
       📥 Excel İçe Aktar
+    </button>
+
+    <button
+      onclick="keepModalAc()"
+      style="float:right;background:#238636;font-size:13px;padding:6px 12px;"
+    >
+      📱 Keep'ten Aktar
     </button>
   </h2>
 
@@ -285,6 +292,48 @@
 
   </div>
 
+</div>
+
+
+
+<!-- ═══════════════════════════════════════════════════════
+     KEEP'TEN AKTAR MODAL
+     ═══════════════════════════════════════════════════════ -->
+<div id="keep-modal" class="modal-overlay hidden">
+  <div class="keep-modal">
+
+    <div class="keep-modal-header">
+      <h2>📱 Keep'ten Aday Aktar</h2>
+      <button class="modal-close" onclick="keepModalKapat()" title="Kapat">✕</button>
+    </div>
+
+    <div class="keep-modal-body">
+
+      <p class="keep-aciklama">
+        Keep notunuzu aşağıya yapıştırın.<br>
+        <strong>Format:</strong> Her satır <code>• [🟡/🟢] İsim: Açıklama</code> şeklinde olmalı.
+      </p>
+
+      <textarea
+        id="keep-metin"
+        placeholder="• 🟢 Ahmet Yılmaz: Yazılımcı, İzmir&#10;• 🟡 Ayşe Kaya: Pazarlama, İstanbul&#10;..."
+        rows="15"
+      ></textarea>
+
+      <div id="keep-onizleme" class="keep-onizleme hidden">
+        <div class="keep-onizleme-baslik">📊 Önizleme</div>
+        <div id="keep-onizleme-icerik"></div>
+      </div>
+
+    </div>
+
+    <div class="keep-modal-footer">
+      <button class="btn-secondary" onclick="keepOnizle()">👁️ Önizle</button>
+      <button class="btn-green" onclick="keepAktar()">✅ Aktar</button>
+      <button class="btn-cancel" onclick="keepModalKapat()">İptal</button>
+    </div>
+
+  </div>
 </div>
 
 {% endblock %}
