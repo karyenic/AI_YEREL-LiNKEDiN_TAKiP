@@ -728,20 +728,29 @@ tbody tr.aday-satir:hover td {
 }
 
 .model-rozet {
+  display: inline-block;
   font-size: 11px;
-  color: #8b949e;
-  background: #1c2128;
-  border: 1px solid #30363d;
-  border-radius: 8px;
-  padding: 2px 8px;
-  margin-bottom: 4px;
+  color: #58a6ff;
+  background: #1f6feb22;
+  border: 1px solid #1f6feb66;
+  border-radius: 10px;
+  padding: 3px 10px;
+  margin-bottom: 6px;
   align-self: flex-start;
+  font-family: monospace;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.model-rozet:hover {
+  background: #1f6feb44;
+  border-color: #1f6feb;
 }
 
 .model-rozet.fb {
-  color: #d29922;
-  border-color: #9e6a03;
-  background: #9e6a0322;
+  color: #f0883e;
+  border-color: #f0883eaa;
+  background: #f0883e22;
 }
 
 .dur-btn {

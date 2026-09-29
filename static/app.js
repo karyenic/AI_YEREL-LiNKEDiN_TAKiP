@@ -66,12 +66,21 @@ async function adaylariYukle() {
       <td>${bool(a.hayir)}</td>
       <td>${bool(a.is_ariyor)}</td>
 
-      <td>
+      <td style="white-space:nowrap;">
         <button
           onclick="event.stopPropagation(); adayKartiAc(${a.id})"
-          style="background:#1f6feb;padding:7px 11px;font-size:13px;"
+          style="background:#1f6feb;padding:7px 11px;font-size:13px;margin-right:4px;"
+          title="Aday Kartı"
         >
           👤 Kart
+        </button>
+
+        <button
+          onclick="event.stopPropagation(); adaySilOnay(${a.id}, '${htmlGuvenli(a.isim).replace(/'/g, "\\'")}')"
+          style="background:#da3633;padding:7px 11px;font-size:13px;"
+          title="Adayı Sil"
+        >
+          🗑️ Sil
         </button>
       </td>
     `;
@@ -2032,5 +2041,48 @@ async function excelBildirimGoster() {
 
   } catch (e) {
     console.error("Bildirim hatası:", e);
+  }
+}
+
+
+
+// ═══════════════════════════════════════════════════════════
+// ADAY SİL — Onaylı silme
+// ═══════════════════════════════════════════════════════════
+async function adaySilOnay(id, isim) {
+  const emin = confirm(
+    `"${isim}" adlı adayı silmek istediğinizden emin misiniz?\n\n` +
+    `Bu işlem GERİ ALINAMAZ!`
+  );
+
+  if (!emin) return;
+
+  try {
+    const r = await fetch(`/api/candidates/${id}`, {
+      method: "DELETE"
+    });
+
+    const d = await r.json();
+
+    if (d.ok) {
+      // Tablodan satırı kaldır (animasyonlu)
+      const satirlar = document.querySelectorAll("#aday-tablo tbody tr");
+      for (const tr of satirlar) {
+        const idCell = tr.querySelector("td");
+        if (idCell && idCell.textContent.trim() === String(id)) {
+          tr.style.transition = "opacity 0.3s, transform 0.3s";
+          tr.style.opacity = "0";
+          tr.style.transform = "translateX(-20px)";
+          setTimeout(() => tr.remove(), 300);
+          break;
+        }
+      }
+      console.log(`✅ Aday silindi: ${isim} (ID: ${id})`);
+    } else {
+      alert("❌ Silme başarısız!");
+    }
+  } catch (e) {
+    console.error("Silme hatası:", e);
+    alert(`❌ Silme hatası: ${e}`);
   }
 }
