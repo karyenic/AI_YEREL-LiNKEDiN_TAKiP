@@ -1565,3 +1565,46 @@ main > section {
 .metric-grid {
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   İSİM LİNKİ (LinkedIn)
+   ═══════════════════════════════════════════════════════════ */
+.isim-link {
+  color: #58a6ff;
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 1px dashed #58a6ff66;
+  transition: all 0.15s;
+  padding: 1px 2px;
+  border-radius: 3px;
+}
+
+.isim-link:hover {
+  color: #79c0ff;
+  background: #1f6feb22;
+  border-bottom-color: #58a6ff;
+  text-decoration: none;
+}
+
+.isim-link:active {
+  color: #1f6feb;
+}
+
+.isim-link::after {
+  content: " ↗";
+  font-size: 10px;
+  opacity: 0.6;
+  vertical-align: super;
+}
+
+/* Yazdırırken linki sade göster */
+@media print {
+  .isim-link {
+    color: black !important;
+    border-bottom: none !important;
+  }
+  .isim-link::after {
+    display: none !important;
+  }
+}

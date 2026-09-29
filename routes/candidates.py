@@ -36,7 +36,8 @@ def ekle():
         d.get("kayit", 0),
         d.get("takip", 0),
         d.get("hayir", 0),
-        d.get("is_ariyor", 0)
+        d.get("is_ariyor", 0),
+        linkedin_url=d.get("linkedin_url", None)
     )
 
     return jsonify({"ok": ok})

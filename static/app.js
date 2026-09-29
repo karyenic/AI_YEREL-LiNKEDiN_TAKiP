@@ -39,6 +39,7 @@ async function adaylariYukle() {
 
     const tr = document.createElement("tr");
     tr.className = "aday-satir";
+    tr.dataset.adayId = String(a.id);
 
     const bool = v =>
       v == 1
@@ -48,8 +49,14 @@ async function adaylariYukle() {
     tr.innerHTML = `
       <td>${htmlGuvenli(a.id)}</td>
 
-      <td>
-        <strong>${htmlGuvenli(a.isim)}</strong>
+            <td>
+        ${a.linkedin_url 
+          ? `<a href="${htmlGuvenli(a.linkedin_url)}" 
+                target="_blank" 
+                onclick="event.stopPropagation();"
+                class="isim-link"
+                title="LinkedIn profilini aç">${htmlGuvenli(a.isim)}</a>`
+          : `<strong>${htmlGuvenli(a.isim)}</strong>`}
       </td>
 
       <td>${htmlGuvenli(a.tarih || "")}</td>
@@ -85,8 +92,11 @@ async function adaylariYukle() {
       </td>
     `;
 
-    tr.addEventListener("click", () => {
-      adayKartiAc(a.id);
+    tr.addEventListener("click", (e) => {
+      if (e.target.closest("a") || e.target.closest("button")) {
+        return;
+      }
+      adayKartiAc(Number(tr.dataset.adayId));
     });
 
     tbody.appendChild(tr);
@@ -108,6 +118,7 @@ async function adayEkle() {
     takip: document.getElementById("takip").checked ? 1 : 0,
     hayir: document.getElementById("hayir").checked ? 1 : 0,
     is_ariyor: document.getElementById("is_ariyor").checked ? 1 : 0,
+    linkedin_url: (document.getElementById("linkedin-url")?.value || "").trim() || null,
   };
 
   if (!d.isim.trim()) {
@@ -193,7 +204,8 @@ function adayKartiDoldur(data) {
   document.getElementById("kart-isim").textContent =
     data.isim || "Aday";
 
-  document.getElementById("kart-telefon").value =
+  linkedinLinkGuncelle(data.linkedin_url || "");
+      document.getElementById("kart-telefon").value =
     data.telefon || "";
 
   document.getElementById("kart-email").value =
@@ -2237,5 +2249,26 @@ async function keepAktar() {
   } finally {
     btn.disabled = false;
     btn.textContent = "✅ Aktar";
+  }
+}
+
+
+
+// ═══════════════════════════════════════════════════════════
+// LINKEDIN LİNKİ GÖSTER
+// ═══════════════════════════════════════════════════════════
+function linkedinLinkGuncelle(url) {
+  const link = document.getElementById("kart-linkedin-link");
+  const yok = document.getElementById("kart-linkedin-yok");
+
+  if (!link || !yok) return;
+
+  if (url && url.trim()) {
+    link.href = url;
+    link.style.display = "inline-block";
+    yok.style.display = "none";
+  } else {
+    link.style.display = "none";
+    yok.style.display = "block";
   }
 }

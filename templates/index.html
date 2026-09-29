@@ -19,6 +19,10 @@
     <input id="aciklama" placeholder="Açıklama">
   </div>
 
+  <div style="margin-top:10px;">
+    <input id="linkedin-url" placeholder="🔗 LinkedIn URL (opsiyonel): https://linkedin.com/in/kullanici-adi" style="width:100%; padding:12px; font-size:15px; background:#0d1117; color:#c9d1d9; border:1px solid #30363d; border-radius:6px;">
+  </div>
+
   <div class="checks">
     <label><input type="checkbox" id="davet"> Davet</label>
     <label><input type="checkbox" id="randevu"> Randevu</label>
@@ -80,6 +84,7 @@
           <th onclick="sirala('takip')" style="cursor:pointer;" title="Sırala">Takip</th>
           <th onclick="sirala('hayir')" style="cursor:pointer;" title="Sırala">Hayır</th>
           <th onclick="sirala('is_ariyor')" style="cursor:pointer;" title="Sırala">İş Arıyor</th>
+          <th style="text-align:center;">LinkedIn</th>
           <th>İşlem</th>
         </tr>
       </thead>
@@ -131,6 +136,12 @@
       <div class="aday-bilgi-panel">
 
         <h3>İletişim Bilgileri</h3>
+
+        <label>LinkedIn</label>
+        <div id="kart-linkedin-wrapper" style="margin-bottom:12px;">
+          <a id="kart-linkedin-link" href="#" target="_blank" style="color:#58a6ff; text-decoration:none; font-size:14px; display:none; padding:8px 12px; background:#1f6feb22; border:1px solid #1f6feb66; border-radius:6px; display:inline-block;">🔗 LinkedIn Profilini Aç</a>
+          <div id="kart-linkedin-yok" style="color:#8b949e; font-size:13px; padding:8px 0;">LinkedIn URL kayıtlı değil</div>
+        </div>
 
         <label>Telefon</label>
         <input

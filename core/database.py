@@ -271,7 +271,7 @@ def aday_ekle(
     hayir,
     is_ariyor,
     kaynak_hash=None
-):
+, linkedin_url=None):
     try:
         with _conn(ADAY_DB) as c:
             c.execute(
@@ -409,46 +409,10 @@ def tum_adaylari_sil():
 # Yeni Aday Kartı / Geçmiş sistemi
 # ============================================================
 
-def _profil_id_eski_aday(aday_id):
-    with _conn(ADAY_DB) as c:
-        row = c.execute(
-            '''
-            SELECT aday_id
-            FROM aday_olaylari
-            WHERE kaynak_kayit_id = ?
-            ORDER BY id ASC
-            LIMIT 1
-            ''',
-            (aday_id,)
-        ).fetchone()
-
-        if row:
-            return row["aday_id"]
-
-        eski = c.execute(
-            "SELECT isim FROM adaylar WHERE id=?",
-            (aday_id,)
-        ).fetchone()
-
-        if not eski:
-            return None
-
-        profil = c.execute(
-            '''
-            SELECT id
-            FROM aday_profil
-            WHERE lower(trim(isim)) = lower(trim(?))
-            ORDER BY id ASC
-            LIMIT 1
-            ''',
-            (eski["isim"] or "",)
-        ).fetchone()
-
-        return profil["id"] if profil else None
-
-
 def aday_karti_getir(eski_aday_id):
+    """Eski aday ID'sinden kart bilgilerini getirir."""
     with _conn(ADAY_DB) as c:
+        # 1. adaylar tablosundan ana kaydi al
         eski = c.execute(
             "SELECT * FROM adaylar WHERE id=?",
             (eski_aday_id,)
@@ -457,114 +421,58 @@ def aday_karti_getir(eski_aday_id):
         if not eski:
             return None
 
-        profil_id = _profil_id_eski_aday(eski_aday_id)
+        # 2. Isim
+        isim = eski["isim"] or ""
 
-        if profil_id is None:
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            cur = c.execute(
-                '''
-                INSERT INTO aday_profil
-                (isim, telefon, email, adres, aktif, created_at, updated_at)
-                VALUES (?, '', '', '', 1, ?, ?)
-                ''',
-                (eski["isim"] or "", now, now)
-            )
-            profil_id = cur.lastrowid
-
-            c.execute(
-                '''
-                INSERT INTO aday_olaylari
-                (
-                    aday_id,
-                    tarih,
-                    olay_tipi,
-                    olay_metni,
-                    kaynak,
-                    kaynak_kayit_id,
-                    davet,
-                    randevu,
-                    plan,
-                    kayit,
-                    takip,
-                    hayir,
-                    is_ariyor,
-                    durum,
-                    created_at
-                )
-                VALUES (?, ?, 'Excel Geçmişi', ?, 'eski_kayit', ?, ?, ?, ?, ?, ?, ?, ?, '', ?)
-                ''',
-                (
-                    profil_id,
-                    eski["tarih"] or "",
-                    eski["aciklama"] or "",
-                    eski["id"],
-                    int(eski["davet"] or 0),
-                    int(eski["randevu"] or 0),
-                    int(eski["plan"] or 0),
-                    int(eski["kayit"] or 0),
-                    int(eski["takip"] or 0),
-                    int(eski["hayir"] or 0),
-                    int(eski["is_ariyor"] or 0),
-                    datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                )
-            )
-            c.commit()
-
+        # 3. Ayni isimdeki profil kaydini bul (varsa)
         profil = c.execute(
-            '''
-            SELECT *
-            FROM aday_profil
-            WHERE id=?
-            ''',
-            (profil_id,)
+            "SELECT * FROM aday_profil WHERE isim=? LIMIT 1",
+            (isim,)
         ).fetchone()
 
-        olaylar = c.execute(
-            '''
-            SELECT *
-            FROM aday_olaylari
-            WHERE aday_id=?
-            ORDER BY
-                CASE
-                    WHEN tarih IS NULL OR trim(tarih) = '' THEN 1
-                    ELSE 0
-                END,
-                id ASC
-            ''',
-            (profil_id,)
-        ).fetchall()
+        # 4. Gecmis olaylari (aday_olaylari tablosundan)
+        gecmis = []
+        try:
+            gecmis_rows = c.execute(
+                """
+                SELECT tarih, olay_tipi, olay_metni, durum
+                FROM aday_olaylari
+                WHERE kaynak_kayit_id = ?
+                ORDER BY tarih DESC, id DESC
+                LIMIT 50
+                """,
+                (eski_aday_id,)
+            ).fetchall()
+            gecmis = [dict(r) for r in gecmis_rows]
+        except Exception:
+            gecmis = []
 
-        son_durum = c.execute(
-            '''
-            SELECT durum
-            FROM aday_olaylari
-            WHERE aday_id=?
-              AND durum IS NOT NULL
-              AND trim(durum) <> ''
-            ORDER BY id DESC
-            LIMIT 1
-            ''',
-            (profil_id,)
-        ).fetchone()
-
-        durum = (
-            son_durum["durum"]
-            if son_durum and son_durum["durum"]
-            else "🟢 Aktif"
-        )
+        # 5. Yanit
+        def _get(row, key, default=None):
+            try:
+                return row[key] if row and key in row.keys() else default
+            except Exception:
+                return default
 
         return {
-            "aday_id": eski_aday_id,
-            "profil_id": profil_id,
-            "isim": profil["isim"] if profil else eski["isim"],
-            "telefon": profil["telefon"] if profil else "",
-            "email": profil["email"] if profil else "",
-            "adres": profil["adres"] if profil else "",
-            "aktif": bool(profil["aktif"]) if profil else True,
-            "durum": durum,
-            "gecmis": [dict(x) for x in olaylar]
+            "id": eski["id"],
+            "isim": isim,
+            "tarih": _get(eski, "tarih", ""),
+            "aciklama": _get(eski, "aciklama", ""),
+            "davet": _get(eski, "davet", 0),
+            "randevu": _get(eski, "randevu", 0),
+            "plan": _get(eski, "plan", 0),
+            "kayit": _get(eski, "kayit", 0),
+            "takip": _get(eski, "takip", 0),
+            "hayir": _get(eski, "hayir", 0),
+            "is_ariyor": _get(eski, "is_ariyor", 0),
+            "linkedin_url": _get(eski, "linkedin_url", None),
+            "telefon": profil["telefon"] if profil and "telefon" in profil.keys() else "",
+            "email": profil["email"] if profil and "email" in profil.keys() else "",
+            "adres": profil["adres"] if profil and "adres" in profil.keys() else "",
+            "durum": profil["durum"] if profil and "durum" in profil.keys() else "🟢 Aktif",
+            "gecmis": gecmis
         }
-
 
 def aday_profil_guncelle(eski_aday_id, telefon, email, adres):
     with _conn(ADAY_DB) as c:
