@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}AI Asistan{% endblock %}
 
@@ -11,23 +11,20 @@
     <h2>💬 AI Asistan</h2>
 
     <div class="chat-controls">
-             <select id="kategori-filtre" onchange="chatYukle()" title="Kategoriye göre filtrele">
-         <option value="hepsi">🔵 Tümü</option>
-         <option value="istatistik">📊 İstatistik</option>
-         <option value="sorgu">🔍 Sorgu</option>
-         <option value="oneri">🎯 Öneri</option>
-         <option value="analiz">🧠 Analiz</option>
-         <option value="sohbet">💬 Sohbet</option>
-       </select>
+
+      <select id="kategori-filtre" onchange="chatYukle()" title="Kategoriye göre filtrele">
+        <option value="hepsi">🔵 Tümü</option>
+        <option value="istatistik">📊 İstatistik</option>
+        <option value="sorgu">🔍 Sorgu</option>
+        <option value="oneri">🎯 Öneri</option>
+        <option value="analiz">🧠 Analiz</option>
+        <option value="sohbet">💬 Sohbet</option>
+      </select>
 
       <select id="model-select"></select>
 
-      <button onclick="chatTemizle()">
-      <select id="model-select"></select>
+      <button onclick="chatTemizle()">🧹 Temizle</button>
 
-      <button onclick="chatTemizle()">
-        🧹 Temizle
-      </button>
     </div>
 
   </div>
@@ -42,9 +39,7 @@
       rows="1"
       autofocus></textarea>
 
-    <button onclick="chatGonder()" class="btn-gonder">
-      Gönder
-    </button>
+    <button onclick="chatGonder()" class="btn-gonder">Gönder</button>
 
   </div>
 

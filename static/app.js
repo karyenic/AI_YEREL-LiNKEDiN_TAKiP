@@ -1040,10 +1040,15 @@ async function chatGonder() {
             cevap.textContent +=
               obj.t;
 
-            document.getElementById(
-              "chat-messages"
-            ).scrollTop =
-              999999;
+            // Akıllı scroll: sadece kullanıcı en alttaysa otomatik kaydır
+            const _kutu = document.getElementById("chat-messages");
+            if (_kutu) {
+              const _enAltMi =
+                (_kutu.scrollHeight - _kutu.scrollTop - _kutu.clientHeight) < 80;
+              if (_enAltMi) {
+                _kutu.scrollTop = _kutu.scrollHeight;
+              }
+            }
           }
 
         } catch (e) {
@@ -1412,6 +1417,10 @@ document.addEventListener(
     modelleriYukle();
     metrikYukle();
     ollamaDurumGuncelle();
+    excelBildirimGoster();
+    excelBildirimGoster();
+    excelBildirimGoster();
+    excelBildirimGoster();
 
     setInterval(
       ollamaDurumGuncelle,
@@ -1812,4 +1821,216 @@ function sirala(kolon) {
             th.textContent += yon === "asc" ? " ^" : " v";
         }
     });
+}
+
+
+
+// ═══════════════════════════════════════════════════════════
+// AÇILIŞ BİLDİRİMİ — Excel tarama sonucu
+// ═══════════════════════════════════════════════════════════
+async function excelBildirimGoster() {
+  try {
+    const r = await fetch("/api/excel/durum");
+    if (!r.ok) return;
+    const d = await r.json();
+
+    if (!d.zaman) return;  // Hiç tarama yapılmamış
+
+    const main = document.querySelector("main");
+    if (!main) return;
+
+    // Aynı anda birden fazla bildirim olmasın
+    const eski = document.querySelector(".excel-bildirim");
+    if (eski) eski.remove();
+
+    const b = document.createElement("div");
+    b.className = "excel-bildirim " + (d.eklenen > 0 ? "yeni" : "bilgi");
+
+    let metin;
+    if (d.eklenen > 0) {
+      metin = `📥 <strong>${d.eklenen} yeni aday eklendi</strong>`;
+      if (d.atlanan > 0) {
+        metin += `, ${d.atlanan} zaten mevcuttu`;
+      }
+    } else {
+      metin = `✅ Excel tarandı, yeni aday yok (${d.atlanan} mevcut)`;
+    }
+
+    b.innerHTML = `
+      <span>${metin} <span class="zaman">(${d.zaman})</span></span>
+      <button onclick="this.parentElement.remove()" title="Kapat">✕</button>
+    `;
+
+    main.insertBefore(b, main.firstChild);
+
+    // 10 saniye sonra otomatik kaybol
+    setTimeout(() => {
+      if (b.parentElement) {
+        b.style.opacity = "0";
+        setTimeout(() => b.remove(), 300);
+      }
+    }, 10000);
+
+  } catch (e) {
+    console.error("Bildirim hatası:", e);
+  }
+}
+
+
+
+// ═══════════════════════════════════════════════════════════
+// AÇILIŞ BİLDİRİMİ — Excel tarama sonucu
+// ═══════════════════════════════════════════════════════════
+async function excelBildirimGoster() {
+  try {
+    const r = await fetch("/api/excel/durum");
+    if (!r.ok) return;
+    const d = await r.json();
+
+    if (!d.zaman) return;  // Hiç tarama yapılmamış
+
+    const main = document.querySelector("main");
+    if (!main) return;
+
+    // Aynı anda birden fazla bildirim olmasın
+    const eski = document.querySelector(".excel-bildirim");
+    if (eski) eski.remove();
+
+    const b = document.createElement("div");
+    b.className = "excel-bildirim " + (d.eklenen > 0 ? "yeni" : "bilgi");
+
+    let metin;
+    if (d.eklenen > 0) {
+      metin = `📥 <strong>${d.eklenen} yeni aday eklendi</strong>`;
+      if (d.atlanan > 0) {
+        metin += `, ${d.atlanan} zaten mevcuttu`;
+      }
+    } else {
+      metin = `✅ Excel tarandı, yeni aday yok (${d.atlanan} mevcut)`;
+    }
+
+    b.innerHTML = `
+      <span>${metin} <span class="zaman">(${d.zaman})</span></span>
+      <button onclick="this.parentElement.remove()" title="Kapat">✕</button>
+    `;
+
+    main.insertBefore(b, main.firstChild);
+
+    // 10 saniye sonra otomatik kaybol
+    setTimeout(() => {
+      if (b.parentElement) {
+        b.style.opacity = "0";
+        setTimeout(() => b.remove(), 300);
+      }
+    }, 10000);
+
+  } catch (e) {
+    console.error("Bildirim hatası:", e);
+  }
+}
+
+
+
+// ═══════════════════════════════════════════════════════════
+// AÇILIŞ BİLDİRİMİ — Excel tarama sonucu
+// ═══════════════════════════════════════════════════════════
+async function excelBildirimGoster() {
+  try {
+    const r = await fetch("/api/excel/durum");
+    if (!r.ok) return;
+    const d = await r.json();
+
+    if (!d.zaman) return;  // Hiç tarama yapılmamış
+
+    const main = document.querySelector("main");
+    if (!main) return;
+
+    // Aynı anda birden fazla bildirim olmasın
+    const eski = document.querySelector(".excel-bildirim");
+    if (eski) eski.remove();
+
+    const b = document.createElement("div");
+    b.className = "excel-bildirim " + (d.eklenen > 0 ? "yeni" : "bilgi");
+
+    let metin;
+    if (d.eklenen > 0) {
+      metin = `📥 <strong>${d.eklenen} yeni aday eklendi</strong>`;
+      if (d.atlanan > 0) {
+        metin += `, ${d.atlanan} zaten mevcuttu`;
+      }
+    } else {
+      metin = `✅ Excel tarandı, yeni aday yok (${d.atlanan} mevcut)`;
+    }
+
+    b.innerHTML = `
+      <span>${metin} <span class="zaman">(${d.zaman})</span></span>
+      <button onclick="this.parentElement.remove()" title="Kapat">✕</button>
+    `;
+
+    main.insertBefore(b, main.firstChild);
+
+    // 10 saniye sonra otomatik kaybol
+    setTimeout(() => {
+      if (b.parentElement) {
+        b.style.opacity = "0";
+        setTimeout(() => b.remove(), 300);
+      }
+    }, 10000);
+
+  } catch (e) {
+    console.error("Bildirim hatası:", e);
+  }
+}
+
+
+
+// ═══════════════════════════════════════════════════════════
+// AÇILIŞ BİLDİRİMİ — Excel tarama sonucu
+// ═══════════════════════════════════════════════════════════
+async function excelBildirimGoster() {
+  try {
+    const r = await fetch("/api/excel/durum");
+    if (!r.ok) return;
+    const d = await r.json();
+
+    if (!d.zaman) return;  // Hiç tarama yapılmamış
+
+    const main = document.querySelector("main");
+    if (!main) return;
+
+    // Aynı anda birden fazla bildirim olmasın
+    const eski = document.querySelector(".excel-bildirim");
+    if (eski) eski.remove();
+
+    const b = document.createElement("div");
+    b.className = "excel-bildirim " + (d.eklenen > 0 ? "yeni" : "bilgi");
+
+    let metin;
+    if (d.eklenen > 0) {
+      metin = `📥 <strong>${d.eklenen} yeni aday eklendi</strong>`;
+      if (d.atlanan > 0) {
+        metin += `, ${d.atlanan} zaten mevcuttu`;
+      }
+    } else {
+      metin = `✅ Excel tarandı, yeni aday yok (${d.atlanan} mevcut)`;
+    }
+
+    b.innerHTML = `
+      <span>${metin} <span class="zaman">(${d.zaman})</span></span>
+      <button onclick="this.parentElement.remove()" title="Kapat">✕</button>
+    `;
+
+    main.insertBefore(b, main.firstChild);
+
+    // 10 saniye sonra otomatik kaybol
+    setTimeout(() => {
+      if (b.parentElement) {
+        b.style.opacity = "0";
+        setTimeout(() => b.remove(), 300);
+      }
+    }, 10000);
+
+  } catch (e) {
+    console.error("Bildirim hatası:", e);
+  }
 }

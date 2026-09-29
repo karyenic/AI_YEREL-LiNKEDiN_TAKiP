@@ -102,6 +102,54 @@ def _arka_plan():
         ok, msg = excel_ice_aktar(IZLENEN_EXCEL)
         print(f"   -> {msg}")
 
+        # Açılış bildirimi için sonucu kaydet
+        try:
+            import re
+            from routes.excel import durum_guncelle
+            m = re.search(r"(\d+) yeni aday eklendi, (\d+) zaten mevcuttu", msg)
+            if m:
+                durum_guncelle(int(m.group(1)), int(m.group(2)), msg)
+            else:
+                durum_guncelle(0, 0, msg)
+        except Exception as e:
+            print(f"   (bildirim kaydi hatasi: {e})")
+
+        # Açılış bildirimi için sonucu kaydet
+        try:
+            import re
+            from routes.excel import durum_guncelle
+            m = re.search(r"(\d+) yeni aday eklendi, (\d+) zaten mevcuttu", msg)
+            if m:
+                durum_guncelle(int(m.group(1)), int(m.group(2)), msg)
+            else:
+                durum_guncelle(0, 0, msg)
+        except Exception as e:
+            print(f"   (bildirim kaydi hatasi: {e})")
+
+        # Açılış bildirimi için sonucu kaydet
+        try:
+            import re
+            from routes.excel import durum_guncelle
+            m = re.search(r"(\d+) yeni aday eklendi, (\d+) zaten mevcuttu", msg)
+            if m:
+                durum_guncelle(int(m.group(1)), int(m.group(2)), msg)
+            else:
+                durum_guncelle(0, 0, msg)
+        except Exception as e:
+            print(f"   (bildirim kaydi hatasi: {e})")
+
+        # Açılış bildirimi için sonucu kaydet
+        try:
+            import re
+            from routes.excel import durum_guncelle
+            m = re.search(r"(\d+) yeni aday eklendi, (\d+) zaten mevcuttu", msg)
+            if m:
+                durum_guncelle(int(m.group(1)), int(m.group(2)), msg)
+            else:
+                durum_guncelle(0, 0, msg)
+        except Exception as e:
+            print(f"   (bildirim kaydi hatasi: {e})")
+
     print("Excel watcher baslatiliyor...")
     watcher_baslat()
     print("Arka plan isleri tamamlandi.")
