@@ -3,6 +3,47 @@ from datetime import datetime
 from config import ADAY_DB, CHAT_DB
 
 
+
+def _profil_id_eski_aday(aday_id):
+    """Eski aday ID'sinden profil ID'sini bulur."""
+    with _conn(ADAY_DB) as c:
+        # 1. aday_olaylari tablosunda ara
+        row = c.execute(
+            """
+            SELECT aday_id
+            FROM aday_olaylari
+            WHERE kaynak_kayit_id = ?
+            ORDER BY id ASC
+            LIMIT 1
+            """,
+            (aday_id,)
+        ).fetchone()
+
+        if row:
+            return row["aday_id"]
+
+        # 2. isim ile aday_profil'da ara
+        eski = c.execute(
+            "SELECT isim FROM adaylar WHERE id=?",
+            (aday_id,)
+        ).fetchone()
+
+        if not eski:
+            return None
+
+        isim = eski["isim"] or ""
+
+        # 3. Ayni isimdeki profil kaydini bul
+        profil = c.execute(
+            "SELECT id FROM aday_profil WHERE isim=? LIMIT 1",
+            (isim,)
+        ).fetchone()
+
+        if profil:
+            return profil["id"]
+
+        return None
+
 def _conn(db_path):
     conn = sqlite3.connect(str(db_path), check_same_thread=False)
     conn.row_factory = sqlite3.Row
@@ -252,12 +293,35 @@ def init_all():
 # ============================================================
 
 def adaylari_getir():
+    """Tum adaylari son durumlariyla birlikte dondurur.
+    Durum, aday_profil tablosundan okunur (kart ile ayni kaynak)."""
     with _conn(ADAY_DB) as c:
-        rows = c.execute(
-            "SELECT * FROM adaylar ORDER BY id DESC"
-        ).fetchall()
-    return [dict(r) for r in rows]
+        rows = c.execute("SELECT * FROM adaylar ORDER BY id DESC").fetchall()
 
+        sonuc = []
+        for r in rows:
+            d = dict(r)
+            isim = (d.get("isim") or "").strip()
+
+            # Durum: aday_profil'DAN (kart ile ayni kaynak)
+            durum = "Yeni"
+            try:
+                if isim:
+                    profil = c.execute(
+                        "SELECT durum FROM aday_profil WHERE LOWER(TRIM(isim))=LOWER(TRIM(?)) LIMIT 1",
+                        (isim,)
+                    ).fetchone()
+                    if profil and profil["durum"]:
+                        durum = profil["durum"]
+                    else:
+                        durum = "Yeni"
+            except Exception:
+                durum = "Yeni"
+
+            d["durum"] = durum
+            sonuc.append(d)
+
+    return sonuc
 
 def aday_ekle(
     isim,
@@ -270,8 +334,9 @@ def aday_ekle(
     takip,
     hayir,
     is_ariyor,
-    kaynak_hash=None
-, linkedin_url=None):
+    kaynak_hash=None,
+    linkedin_url=None
+):
     try:
         with _conn(ADAY_DB) as c:
             c.execute(
@@ -288,9 +353,10 @@ def aday_ekle(
                     takip,
                     hayir,
                     is_ariyor,
-                    kaynak_hash
+                    kaynak_hash,
+                    linkedin_url
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''',
                 (
                     isim,
@@ -303,7 +369,8 @@ def aday_ekle(
                     int(takip),
                     int(hayir),
                     int(is_ariyor),
-                    kaynak_hash
+                    kaynak_hash,
+                    linkedin_url
                 )
             )
 
@@ -421,33 +488,39 @@ def aday_karti_getir(eski_aday_id):
         if not eski:
             return None
 
-        # 2. Isim
         isim = eski["isim"] or ""
 
-        # 3. Ayni isimdeki profil kaydini bul (varsa)
+        # 2. Son durum: aday_olaylari'ndan
+        durum_row = c.execute("""
+            SELECT durum FROM aday_olaylari
+            WHERE kaynak_kayit_id = ?
+              AND durum IS NOT NULL
+              AND durum != ''
+            ORDER BY id DESC LIMIT 1
+        """, (eski_aday_id,)).fetchone()
+
+        durum = durum_row["durum"] if durum_row else "\U0001F195 Yeni"
+
+        # 3. Profil bilgileri (varsa)
         profil = c.execute(
             "SELECT * FROM aday_profil WHERE isim=? LIMIT 1",
             (isim,)
         ).fetchone()
 
-        # 4. Gecmis olaylari (aday_olaylari tablosundan)
+        # 4. Gecmis olaylar
         gecmis = []
         try:
-            gecmis_rows = c.execute(
-                """
+            gecmis_rows = c.execute("""
                 SELECT tarih, olay_tipi, olay_metni, durum
                 FROM aday_olaylari
                 WHERE kaynak_kayit_id = ?
                 ORDER BY tarih DESC, id DESC
                 LIMIT 50
-                """,
-                (eski_aday_id,)
-            ).fetchall()
+            """, (eski_aday_id,)).fetchall()
             gecmis = [dict(r) for r in gecmis_rows]
         except Exception:
             gecmis = []
 
-        # 5. Yanit
         def _get(row, key, default=None):
             try:
                 return row[key] if row and key in row.keys() else default
@@ -467,43 +540,57 @@ def aday_karti_getir(eski_aday_id):
             "hayir": _get(eski, "hayir", 0),
             "is_ariyor": _get(eski, "is_ariyor", 0),
             "linkedin_url": _get(eski, "linkedin_url", None),
-            "telefon": profil["telefon"] if profil and "telefon" in profil.keys() else "",
-            "email": profil["email"] if profil and "email" in profil.keys() else "",
-            "adres": profil["adres"] if profil and "adres" in profil.keys() else "",
-            "durum": profil["durum"] if profil and "durum" in profil.keys() else "🟢 Aktif",
+            "telefon": _get(profil, "telefon", ""),
+            "email": _get(profil, "email", ""),
+            "adres": _get(profil, "adres", ""),
+            "durum": durum,
             "gecmis": gecmis
         }
 
-def aday_profil_guncelle(eski_aday_id, telefon, email, adres):
+def aday_profil_guncelle(aday_id, telefon, email, adres):
+    """Aday profil bilgilerini gunceller (telefon, email, adres)."""
     with _conn(ADAY_DB) as c:
-        profil_id = _profil_id_eski_aday(eski_aday_id)
+        # 1. Adayin ismini al
+        eski = c.execute(
+            "SELECT isim FROM adaylar WHERE id=?",
+            (aday_id,)
+        ).fetchone()
 
-        if profil_id is None:
+        if not eski:
             return False
 
+        isim = eski["isim"] or ""
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        c.execute(
-            '''
-            UPDATE aday_profil
-            SET telefon=?,
-                email=?,
-                adres=?,
-                updated_at=?
-            WHERE id=?
-            ''',
-            (
-                telefon or "",
-                email or "",
-                adres or "",
-                now,
-                profil_id
+        # 2. Bu isimde profil var mi?
+        profil = c.execute(
+            "SELECT id FROM aday_profil WHERE isim=? LIMIT 1",
+            (isim,)
+        ).fetchone()
+
+        if profil:
+            # 3a. Varsa guncelle
+            c.execute(
+                """
+                UPDATE aday_profil
+                SET telefon=?, email=?, adres=?, updated_at=?
+                WHERE id=?
+                """,
+                (telefon, email, adres, now, profil["id"])
             )
-        )
+        else:
+            # 3b. Yoksa yeni olustur
+            c.execute(
+                """
+                INSERT INTO aday_profil
+                (isim, telefon, email, adres, aktif, created_at, updated_at)
+                VALUES (?, ?, ?, ?, 1, ?, ?)
+                """,
+                (isim, telefon, email, adres, now, now)
+            )
+
         c.commit()
-
-    return True
-
+        return True
 
 def aday_gelisme_ekle(
     eski_aday_id,
@@ -552,6 +639,82 @@ def aday_gelisme_ekle(
                 now
             )
         )
+
+        # Durum verildiyse aday_profil.durum'u da guncelle
+        if durum and str(durum).strip():
+            try:
+                isim_row = c.execute(
+                    "SELECT isim FROM adaylar WHERE id=?",
+                    (eski_aday_id,)
+                ).fetchone()
+
+                if isim_row:
+                    try:
+                        isim = isim_row["isim"] if hasattr(isim_row, "keys") else isim_row[0]
+                    except Exception:
+                        isim = str(isim_row)
+                    isim = (isim or "").strip()
+
+                    if isim:
+                        profil = c.execute(
+                            "SELECT id FROM aday_profil WHERE isim=? LIMIT 1",
+                            (isim,)
+                        ).fetchone()
+
+                        if profil:
+                            try:
+                                pid = profil["id"] if hasattr(profil, "keys") else profil[0]
+                            except Exception:
+                                pid = profil
+                            c.execute(
+                                "UPDATE aday_profil SET durum=?, updated_at=? WHERE id=?",
+                                (durum, now, pid)
+                            )
+                        else:
+                            c.execute(
+                                "INSERT INTO aday_profil (isim, telefon, email, adres, durum, aktif, created_at, updated_at) VALUES (?, '', '', '', ?, 1, ?, ?)",
+                                (isim, durum, now, now)
+                            )
+            except Exception as e:
+                print(f"Durum guncelleme hatasi: {e}")
+
+        # Durum verildiyse aday_profil.durum'u da guncelle
+        if durum and str(durum).strip():
+            try:
+                isim_row = c.execute(
+                    "SELECT isim FROM adaylar WHERE id=?",
+                    (eski_aday_id,)
+                ).fetchone()
+
+                if isim_row:
+                    try:
+                        isim = isim_row["isim"] if hasattr(isim_row, "keys") else isim_row[0]
+                    except Exception:
+                        isim = str(isim_row)
+                    isim = (isim or "").strip()
+
+                    if isim:
+                        profil = c.execute(
+                            "SELECT id FROM aday_profil WHERE isim=? LIMIT 1",
+                            (isim,)
+                        ).fetchone()
+
+                        if profil:
+                            try:
+                                pid = profil["id"] if hasattr(profil, "keys") else profil[0]
+                            except Exception:
+                                pid = profil
+                            c.execute(
+                                "UPDATE aday_profil SET durum=?, updated_at=? WHERE id=?",
+                                (durum, now, pid)
+                            )
+                        else:
+                            c.execute(
+                                "INSERT INTO aday_profil (isim, telefon, email, adres, durum, aktif, created_at, updated_at) VALUES (?, '', '', '', ?, 1, ?, ?)",
+                                (isim, durum, now, now)
+                            )
+            except Exception as e:
+                print(f"Durum guncelleme hatasi: {e}")
 
         c.commit()
 

@@ -202,13 +202,7 @@ button:hover {
    TABLO
    ============================================================ */
 
-.table-scroll {
-  width: 100%;
-  max-height: 62vh;
-  overflow: auto;
-  border: 1px solid #30363d;
-  border-radius: 8px;
-}
+
 
 table {
   width: 100%;
@@ -1550,10 +1544,7 @@ main > section {
 
 /* Tablo container'ı */
 .table-scroll,
-#aday-tablo {
-  width: 100% !important;
-  max-width: 100% !important;
-}
+
 
 /* Chat paneli de tam genişlik */
 .chat-panel {
@@ -1607,4 +1598,268 @@ main > section {
   .isim-link::after {
     display: none !important;
   }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   CHECKS ROW — Checkbox'lar ve Ekle butonu ayni satirda
+   ═══════════════════════════════════════════════════════════ */
+.checks-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  margin-top: 12px;
+}
+
+.checks-row .checks {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 0;
+  flex: 1;
+}
+
+.btn-ekle {
+  padding: 10px 22px;
+  background: #238636;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-ekle:hover {
+  background: #2ea043;
+}
+
+@media (max-width: 900px) {
+  .checks-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .btn-ekle {
+    width: 100%;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   CHECKBOX SATIRI BUTONLARI
+   ═══════════════════════════════════════════════════════════ */
+.btn-keep {
+  padding: 10px 16px;
+  background: #238636;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-keep:hover {
+  background: #2ea043;
+}
+
+.btn-excel-ice {
+  padding: 10px 16px;
+  background: #1f6feb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-excel-ice:hover {
+  background: #388bfd;
+}
+
+@media (max-width: 1100px) {
+  .btn-keep,
+  .btn-excel-ice {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   AI DURUM RENGİ TOPU
+   ═══════════════════════════════════════════════════════════ */
+.durum-top {
+  display: inline-block;
+  font-size: 13px;
+  margin-right: 6px;
+  vertical-align: middle;
+  cursor: help;
+  filter: drop-shadow(0 0 2px rgba(0,0,0,0.4));
+}
+
+.durum-top-kart {
+  display: inline-block;
+  font-size: 20px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+@media print {
+  .durum-top,
+  .durum-top-kart {
+    filter: none;
+  }
+}
+
+
+/* TABLO TAM GENISLIK */
+
+
+.table-scroll {
+  width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+/* ID */
+
+
+/* Isim */
+
+
+/* Tarih */
+
+
+/* Aciklama — esnek */
+
+
+/* Boolean sutunlari */
+
+
+/* Son sutun — butonlar */
+
+
+/* Genel hucre ayari */
+
+/* Son sutun (butonlar) — saga hizala, genis */
+
+
+/* Aciklama sutunu — esnek, kalan yeri alir */
+
+
+/* Isim sutunu */
+
+
+/* Boolean sutunlari daralt */
+
+
+/* LinkedIn sutunu */
+
+
+/* Tarih */
+
+
+/* ID */
+
+
+/* TABLO TAM GENISLIK */
+
+
+.table-scroll {
+  width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+/* ID */
+
+
+/* Isim */
+
+
+/* Tarih */
+
+
+/* Aciklama — esnek */
+
+
+/* Boolean sutunlari */
+
+
+/* Son sutun — butonlar */
+
+
+/* Genel hucre ayari */
+
+
+
+/* ═══════════════════════════════════════════════════════
+   TABLO TAM GENISLIK (TEMIZ)
+   ═══════════════════════════════════════════════════════ */
+.table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+#aday-tablo {
+  width: 100%;
+  min-width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+#aday-tablo th,
+#aday-tablo td {
+  padding: 10px 12px;
+  font-size: 15px;
+  border-bottom: 1px solid #21262d;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+#aday-tablo th:nth-child(1),
+#aday-tablo td:nth-child(1) {
+  width: 55px;
+  text-align: center;
+}
+
+#aday-tablo th:nth-child(2),
+#aday-tablo td:nth-child(2) {
+  width: 200px;
+}
+
+#aday-tablo th:nth-child(3),
+#aday-tablo td:nth-child(3) {
+  width: 95px;
+}
+
+#aday-tablo th:nth-child(4),
+#aday-tablo td:nth-child(4) {
+  width: auto;
+}
+
+#aday-tablo th:nth-child(n+5):nth-child(-n+11),
+#aday-tablo td:nth-child(n+5):nth-child(-n+11) {
+  width: 75px;
+  text-align: center;
+}
+
+#aday-tablo th:nth-child(12),
+#aday-tablo td:nth-child(12) {
+  width: 165px;
+  text-align: right;
+  white-space: nowrap;
+  overflow: visible;
 }

@@ -61,8 +61,8 @@ async function adaylariYukle() {
 
       <td>${htmlGuvenli(a.tarih || "")}</td>
 
-      <td title="${htmlGuvenli(a.aciklama || "")}">
-        ${htmlGuvenli((a.aciklama || "").slice(0, 60))}
+      <td title="${htmlGuvenli(aciklamaTemizle(a.aciklama))}">
+        <span class="durum-top" title="${htmlGuvenli(durumEtiketi(a.durum))}">${durumTopp(a.durum)}</span>${htmlGuvenli(aciklamaTemizle(a.aciklama).slice(0, 60))}
       </td>
 
       <td>${bool(a.davet)}</td>
@@ -1439,6 +1439,7 @@ document.addEventListener(
     metrikYukle();
     ollamaDurumGuncelle();
     excelBildirimGoster();
+    linkedinUrlIzle();
     excelBildirimGoster();
     excelBildirimGoster();
     excelBildirimGoster();
@@ -2271,4 +2272,110 @@ function linkedinLinkGuncelle(url) {
     link.style.display = "none";
     yok.style.display = "block";
   }
+}
+
+
+
+// ═══════════════════════════════════════════════════════════
+// LINKEDIN URL'DEN ISIM CIKARMA
+// ═══════════════════════════════════════════════════════════
+function isimUrlCikar(url) {
+  if (!url) return "";
+
+  // linkedin.com/in/kullanici-adi formati
+  const match = url.match(/linkedin\.com\/in\/([^\/\?#]+)/i);
+  if (!match) return "";
+
+  // Tireyi bosluga cevir
+  let isim = match[1].replace(/-/g, " ");
+
+  // URL decode (Türkçe karakterler için)
+  try { isim = decodeURIComponent(isim); } catch (e) {}
+
+  // Her kelimenin ilk harfini buyut
+  isim = isim
+    .split(" ")
+    .filter(w => w.length > 0)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+
+  return isim;
+}
+
+
+// URL input'unu izle ve isim otomatik doldur
+function linkedinUrlIzle() {
+  const urlInput = document.getElementById("linkedin-url");
+  const isimInput = document.getElementById("isim");
+
+  if (!urlInput || !isimInput) return;
+
+  urlInput.addEventListener("change", () => {
+    const url = urlInput.value.trim();
+    if (!url) return;
+
+    const yeniIsim = isimUrlCikar(url);
+    if (yeniIsim) {
+      isimInput.value = yeniIsim;
+    }
+  });
+
+  urlInput.addEventListener("blur", () => {
+    const url = urlInput.value.trim();
+    if (!url) return;
+
+    const yeniIsim = isimUrlCikar(url);
+    if (yeniIsim && !isimInput.value.trim()) {
+      isimInput.value = yeniIsim;
+    }
+  });
+}
+
+
+
+// ═══════════════════════════════════════════════════════════
+// AI DURUM RENKLERİ
+// ═══════════════════════════════════════════════════════════
+function durumTopp(durum) {
+  if (!durum) return "🆕";
+  const d = String(durum).trim();
+
+  if (d.includes("Yeni") || d.includes("🆕")) return "🆕";
+  if (d.includes("Değerlendirilecek") || d.includes("Değerlendir") || d.includes("⚪")) return "⚪";
+  if (d.includes("Sıcak") || d.includes("🔥")) return "🔥";
+  if (d.includes("Aktif") || d.includes("🟢")) return "🟢";
+  if (d.includes("Bekliyor") || d.includes("🟡")) return "🟡";
+  if (d.includes("DeepFreeze") || d.includes("❄")) return "❄️";
+  if (d.includes("Olumsuz") || d.includes("🔴")) return "🔴";
+  if (d.includes("Arşiv") || d.includes("⚫")) return "⚫";
+
+  return "🆕";
+}
+
+function durumEtiketi(durum) {
+  if (!durum) return "🆕 Yeni";
+  return String(durum).trim();
+}
+
+
+
+// ═══════════════════════════════════════════════════════════
+// ACIKLAMA TEMIZLE — Basindaki statu emoji'sini sil
+// ═══════════════════════════════════════════════════════════
+function aciklamaTemizle(metin) {
+  if (!metin) return "";
+  let s = String(metin).trim();
+
+  // Bastaki tum statu emoji'lerini sil (birkac kez)
+  const emojiler = /^(🆕|⚪|🟢|🟡|🔴|🔥|❄️|❄|⚫|🟠|🟨|🟩|🟥|🟧)\s*/u;
+
+  let onceki = "";
+  let sayac = 0;
+  while (s !== onceki && sayac < 5) {
+    onceki = s;
+    s = s.replace(emojiler, "").trim();
+    sayac++;
+  }
+
+  return s;
 }

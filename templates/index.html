@@ -23,17 +23,23 @@
     <input id="linkedin-url" placeholder="🔗 LinkedIn URL (opsiyonel): https://linkedin.com/in/kullanici-adi" style="width:100%; padding:12px; font-size:15px; background:#0d1117; color:#c9d1d9; border:1px solid #30363d; border-radius:6px;">
   </div>
 
-  <div class="checks">
-    <label><input type="checkbox" id="davet"> Davet</label>
-    <label><input type="checkbox" id="randevu"> Randevu</label>
-    <label><input type="checkbox" id="plan"> Plan</label>
-    <label><input type="checkbox" id="kayit"> Kayıt</label>
-    <label><input type="checkbox" id="takip"> Takip</label>
-    <label><input type="checkbox" id="hayir"> Hayır</label>
-    <label><input type="checkbox" id="is_ariyor"> İş Arıyor</label>
-  </div>
+  <div class="checks-row">
+    <div class="checks">
+      <label><input type="checkbox" id="davet"> Davet</label>
+      <label><input type="checkbox" id="randevu"> Randevu</label>
+      <label><input type="checkbox" id="plan"> Plan</label>
+      <label><input type="checkbox" id="kayit"> Kayıt</label>
+      <label><input type="checkbox" id="takip"> Takip</label>
+      <label><input type="checkbox" id="hayir"> Hayır</label>
+      <label><input type="checkbox" id="is_ariyor"> İş Arıyor</label>
+    </div>
 
-  <button onclick="adayEkle()">✅ Ekle</button>
+    <button onclick="adayEkle()" class="btn-ekle" type="button">✅ Ekle</button>
+
+    <button onclick="keepModalAc()" class="btn-keep" type="button">📱 Keep'ten Aktar</button>
+
+    <button onclick="excelIceAktar()" class="btn-excel-ice" type="button">📥 Excel İçe Aktar</button>
+  </div>
 </section>
 
 
@@ -43,19 +49,9 @@
     Aday Listesi
 <span id="watcher-not" class="muted"></span>
 
-    <button
-      onclick="excelIceAktar()"
-      style="float:right;background:#1f6feb;font-size:13px;padding:6px 12px;margin-left:6px;"
-    >
-      📥 Excel İçe Aktar
-    </button>
+    
 
-    <button
-      onclick="keepModalAc()"
-      style="float:right;background:#238636;font-size:13px;padding:6px 12px;"
-    >
-      📱 Keep'ten Aktar
-    </button>
+    
   </h2>
 
   <div style="margin-bottom:12px;">
@@ -84,8 +80,7 @@
           <th onclick="sirala('takip')" style="cursor:pointer;" title="Sırala">Takip</th>
           <th onclick="sirala('hayir')" style="cursor:pointer;" title="Sırala">Hayır</th>
           <th onclick="sirala('is_ariyor')" style="cursor:pointer;" title="Sırala">İş Arıyor</th>
-          <th style="text-align:center;">LinkedIn</th>
-          <th>İşlem</th>
+          <th style="text-align:right;"></th>
         </tr>
       </thead>
 
@@ -254,6 +249,8 @@
           <select id="gelisme-durum">
 
             <option value="">Durumu değiştirme</option>
+            <option value="🆕 Yeni">🆕 Yeni</option>
+            <option value="⚪ Değerlendirilecek">⚪ Değerlendirilecek</option>
             <option value="🟢 Aktif">🟢 Aktif</option>
             <option value="🔥 Sıcak">🔥 Sıcak</option>
             <option value="🟡 Bekliyor">🟡 Bekliyor</option>
