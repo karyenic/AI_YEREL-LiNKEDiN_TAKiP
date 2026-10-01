@@ -4,7 +4,7 @@ import pandas as pd
 from core.database import (chat_mesajlari_getir, chat_mesaj_ekle, chat_temizle,
                           adaylari_getir, aday_karti_getir)
 from core.ollama_client import chat_stream, sistem_mesaji_olustur
-from config import ADAY_OLAY_LIMIT, ADAY_PROMPT_LIMIT, DEFAULT_MODEL
+from config import ADAY_OLAY_LIMIT, ADAY_PROMPT_LIMIT, DEFAULT_MODEL, DEFAULT_FALLBACK
 
 bp = Blueprint("chat", __name__, url_prefix="/api/chat")
 
@@ -24,8 +24,11 @@ def temizle_route():
 def stream():
     d = request.get_json() or {}
     kullanici_mesaji = d.get("mesaj", "").strip()
-    model = d.get("model")
-    fallback = d.get("fallback")
+    # NOT: "fallback" frontend'den hic gonderilmiyor, bu yuzden None kalirdi.
+    # None, chat_stream icinde ikinci modele dusulurken pydantic hatasiyla
+    # cokerdi - "or DEFAULT_FALLBACK" ile garanti altina aliyoruz.
+    model = d.get("model") or DEFAULT_MODEL
+    fallback = d.get("fallback") or DEFAULT_FALLBACK
 
     if not kullanici_mesaji:
         return jsonify({"error": "Mesaj bos"}), 400
