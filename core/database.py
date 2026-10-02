@@ -819,3 +819,15 @@ def chat_temizle():
     with _conn(CHAT_DB) as c:
         c.execute("DELETE FROM sohbet_loglari")
         c.commit()
+
+
+
+def aday_linkedin_guncelle(aday_id, linkedin_url):
+    """Adayin LinkedIn URL'sini gunceller."""
+    with _conn(ADAY_DB) as c:
+        c.execute(
+            "UPDATE adaylar SET linkedin_url=? WHERE id=?",
+            (linkedin_url, aday_id)
+        )
+        c.commit()
+        return c.total_changes > 0

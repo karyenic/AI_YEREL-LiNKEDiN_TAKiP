@@ -1863,3 +1863,23 @@ main > section {
   white-space: nowrap;
   overflow: visible;
 }
+
+/* AI Önerileri paneli - gerçek strateji/olasılık çıktısı render stili */
+.ai-oneri-metin {
+  padding: 14px 16px;
+  background: var(--panel-bg-2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+.ai-oneri-baslik {
+  margin: 14px 0 4px;
+  font-size: 14px;
+  color: var(--blue);
+}
+.ai-oneri-baslik:first-child { margin-top: 0; }
+.ai-oneri-metin p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+}

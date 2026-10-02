@@ -504,6 +504,11 @@ async function gelismeKaydet() {
 
     await adayKartiAc(aktifAdayId);
 
+    // Listeyi ANINDA yenile (durum degisti)
+    if (typeof adaylariYukle === "function") {
+      adaylariYukle();
+    }
+
     setTimeout(() => {
       gelismeFormuAc();
     }, 100);
@@ -1251,7 +1256,7 @@ async function metrikYukle() {
     if (oran) {
 
       oran.textContent =
-        `📊 Davetten Randevuya: %${m.davet_randevu_oran || 0} | Plandan Kayıta: %${m.plan_kayit_oran || 0}`;
+        `📊 Kaba→Davet: %${m.oran_kabadan_davete ?? 0} · Davet→Randevu: %${m.oran_davetten_randevuya ?? m.davet_randevu_oran ?? 0} · Randevu→Plan: %${m.oran_randevudan_plana ?? 0} · Plan→Kayıt: %${m.oran_plandan_kayda ?? m.plan_kayit_oran ?? 0} · Uçtan uca: %${m.oran_uctan_uca ?? 0}`;
     }
 
   } catch (e) {
@@ -1683,7 +1688,7 @@ function gunlukNotTemizle() {
    AI ÖNERİ ALANI
    ============================================================ */
 
-function aiOneriHazirla() {
+async function aiOneriHazirla() {
 
   const kutu =
     document.getElementById(
@@ -1692,22 +1697,51 @@ function aiOneriHazirla() {
 
   if (!kutu) return;
 
-  kutu.innerHTML =
-    `
+  kutu.innerHTML = `
     <div class="ai-placeholder">
-      <div class="ai-icon">🧠</div>
-
+      <div class="ai-icon">⏳</div>
       <div>
-        <strong>AI çalışma önerileri</strong>
-
-        <p>
-          AI öneri motoru bir sonraki çalışma durağında
-          aday geçmişi ve takip verileriyle bağlanacak.
-          Bu aşamada mevcut aday kayıtları korunmaktadır.
-        </p>
+        <strong>Analiz ediliyor...</strong>
+        <p>Model huni verisini ve temassızlık sürelerini değerlendiriyor, birkaç saniye sürebilir.</p>
       </div>
     </div>
+  `;
+
+  try {
+    const r = await fetch("/api/metrics/ozet", { method: "POST" });
+    const d = await r.json();
+
+    if (!d.ozet) {
+      kutu.innerHTML = `
+        <div class="ai-placeholder">
+          <div class="ai-icon">⚠️</div>
+          <div><strong>Öneri alınamadı.</strong></div>
+        </div>
+      `;
+      return;
+    }
+
+    // "**Başlık**" satırlarını alt başlık, geri kalanı paragraf olarak render et
+    const satirlar = d.ozet.split("\n").filter(s => s.trim() !== "");
+    let html = "";
+    for (const satir of satirlar) {
+      const baslikEslesme = satir.match(/^\*\*(.+?)\*\*:?\s*(.*)$/);
+      if (baslikEslesme) {
+        html += `<h4 class="ai-oneri-baslik">${baslikEslesme[1]}</h4>`;
+        if (baslikEslesme[2]) html += `<p>${baslikEslesme[2]}</p>`;
+      } else {
+        html += `<p>${satir.replace(/^-\s*/, "• ")}</p>`;
+      }
+    }
+    kutu.innerHTML = `<div class="ai-oneri-metin">${html}</div>`;
+  } catch (e) {
+    kutu.innerHTML = `
+      <div class="ai-placeholder">
+        <div class="ai-icon">⚠️</div>
+        <div><strong>Hata:</strong> ${e}</div>
+      </div>
     `;
+  }
 }
 
 // ============================================================
@@ -2259,10 +2293,15 @@ async function keepAktar() {
 // LINKEDIN LİNKİ GÖSTER
 // ═══════════════════════════════════════════════════════════
 function linkedinLinkGuncelle(url) {
+  const input = document.getElementById("kart-linkedin-input");
   const link = document.getElementById("kart-linkedin-link");
   const yok = document.getElementById("kart-linkedin-yok");
 
   if (!link || !yok) return;
+
+  if (input) {
+    input.value = url || "";
+  }
 
   if (url && url.trim()) {
     link.href = url;
@@ -2271,6 +2310,54 @@ function linkedinLinkGuncelle(url) {
   } else {
     link.style.display = "none";
     yok.style.display = "block";
+  }
+}
+
+
+async function linkedinUrlKaydet() {
+  if (!aktifAdayId) {
+    alert("Aktif aday yok.");
+    return;
+  }
+
+  const input = document.getElementById("kart-linkedin-input");
+  const url = (input?.value || "").trim();
+
+  if (!url) {
+    alert("LinkedIn URL bos olamaz.");
+    return;
+  }
+
+  if (!url.toLowerCase().includes("linkedin.com")) {
+    if (!confirm("Bu URL LinkedIn adresi gibi gorunmuyor. Yine de kaydetmek istiyor musunuz?")) {
+      return;
+    }
+  }
+
+  try {
+    const r = await fetch(`/api/candidates/${aktifAdayId}/linkedin`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ linkedin_url: url })
+    });
+
+    const d = await r.json();
+
+    if (!d.ok) {
+      alert("Hata: " + (d.error || "Kayit basarisiz."));
+      return;
+    }
+
+    linkedinLinkGuncelle(url);
+
+    if (typeof adaylariYukle === "function") {
+      adaylariYukle();
+    }
+
+    alert("LinkedIn URL kaydedildi.");
+
+  } catch (e) {
+    alert("Hata: " + e);
   }
 }
 

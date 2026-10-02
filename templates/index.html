@@ -134,8 +134,23 @@
 
         <label>LinkedIn</label>
         <div id="kart-linkedin-wrapper" style="margin-bottom:12px;">
-          <a id="kart-linkedin-link" href="#" target="_blank" style="color:#58a6ff; text-decoration:none; font-size:14px; display:none; padding:8px 12px; background:#1f6feb22; border:1px solid #1f6feb66; border-radius:6px; display:inline-block;">🔗 LinkedIn Profilini Aç</a>
-          <div id="kart-linkedin-yok" style="color:#8b949e; font-size:13px; padding:8px 0;">LinkedIn URL kayıtlı değil</div>
+          <input
+            id="kart-linkedin-input"
+            type="text"
+            placeholder="https://linkedin.com/in/kullanici-adi"
+            style="width:100%; padding:10px; background:#0d1117; color:#c9d1d9; border:1px solid #30363d; border-radius:6px; font-size:14px; margin-bottom:8px;"
+          >
+          <div style="display:flex; gap:8px; align-items:center;">
+            <a id="kart-linkedin-link" href="#" target="_blank" style="color:#58a6ff; text-decoration:none; font-size:13px; display:none; padding:6px 10px; background:#1f6feb22; border:1px solid #1f6feb66; border-radius:6px;">🔗 Aç</a>
+            <button
+              type="button"
+              onclick="linkedinUrlKaydet()"
+              style="background:#238636; color:white; border:none; padding:6px 12px; border-radius:6px; font-size:13px; cursor:pointer; font-weight:600;"
+            >
+              💾 LinkedIn Kaydet
+            </button>
+          </div>
+          <div id="kart-linkedin-yok" style="color:#8b949e; font-size:12px; margin-top:6px;">Henüz LinkedIn URL eklenmemiş</div>
         </div>
 
         <label>Telefon</label>

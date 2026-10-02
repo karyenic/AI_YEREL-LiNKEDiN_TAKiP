@@ -127,3 +127,22 @@ def sil(aday_id):
 def hepsini_sil():
     tum_adaylari_sil()
     return jsonify({"ok": True})
+
+
+
+@bp.route("/<int:aday_id>/linkedin", methods=["PUT"])
+def linkedin_guncelle(aday_id):
+    """Adayin LinkedIn URL'sini gunceller."""
+    from core.database import aday_linkedin_guncelle
+    d = request.get_json() or {}
+    linkedin_url = str(d.get("linkedin_url", "")).strip()
+
+    if not linkedin_url:
+        return jsonify({"ok": False, "error": "URL bos olamaz."}), 400
+
+    ok = aday_linkedin_guncelle(aday_id, linkedin_url)
+
+    if not ok:
+        return jsonify({"ok": False, "error": "Aday bulunamadi."}), 404
+
+    return jsonify({"ok": True, "message": "LinkedIn URL guncellendi."})
