@@ -73,13 +73,9 @@ async function adaylariYukle() {
       <td>${bool(a.hayir)}</td>
       <td>${bool(a.is_ariyor)}</td>
 
-      <td style="white-space:nowrap;">
-        
-      </td>
-
       <td style="white-space:nowrap; text-align:right;">
-        <button
-          onclick="event.stopPropagation(); adaySilOnay(${a.id}, '${htmlGuvenli(a.isim).replace(/'/g, "\\'")}')"
+              <button
+                onclick="event.stopPropagation(); adaySilOnay(${a.id}, '${htmlGuvenli(a.isim).replace(/'/g, "\\'")}')"
           style="background:#da3633;padding:7px 11px;font-size:13px;"
           title="Adayı Sil"
         >
@@ -95,20 +91,14 @@ async function adaylariYukle() {
       adayKartiAc(Number(tr.dataset.adayId));
     });
 
-    tbody.appendChild(tr);
+      tbody.appendChild(tr);
   }
 
-  tbody.querySelectorAll(".btn-sil").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      adaySilOnay(
-        Number(btn.dataset.adayId),
-        btn.dataset.adayIsim || ""
-      );
-    });
-  });
-}
+  // Sütun tutamaçlarını yeniden kur
+  if (typeof sutunAyarlamayiAktifEt === "function") {
+    setTimeout(sutunAyarlamayiAktifEt, 30);
+  }
+}      
 
 
 async function adayEkle() {
@@ -121,6 +111,7 @@ async function adayEkle() {
              String(d.getMonth() + 1).padStart(2, "0") + " " +
              String(d.getFullYear()).slice(-2);
     })(),
+
     aciklama: document.getElementById("aciklama").value,
 
     davet: document.getElementById("davet").checked ? 1 : 0,
@@ -157,7 +148,6 @@ async function adayEkle() {
   }
 
   document.getElementById("isim").value = "";
-  document.getElementById("tarih").value = "";
   document.getElementById("aciklama").value = "";
 
   adaylariYukle();
@@ -2478,3 +2468,189 @@ function aciklamaTemizle(metin) {
 
   return s;
 }
+
+
+
+// ═══════════════════════════════════════════════════════════
+// SUTUN GENISLIGI AYARLAMA (Excel gibi)
+// ═══════════════════════════════════════════════════════════
+function sutunAyarlamayiAktifEt() {
+  const tablo = document.getElementById("aday-tablo");
+  if (!tablo) return;
+
+  const ths = tablo.querySelectorAll("thead th");
+  if (!ths.length) return;
+
+  const kayitli = JSON.parse(localStorage.getItem("sutun_genislikleri") || "{}");
+
+  ths.forEach((th, index) => {
+    const eski = th.querySelector(".sutun-tutamac");
+    if (eski) eski.remove();
+
+    if (kayitli[index]) {
+      th.style.width = kayitli[index] + "px";
+      th.style.minWidth = kayitli[index] + "px";
+    }
+
+    const tutamac = document.createElement("div");
+    tutamac.className = "sutun-tutamac";
+    tutamac.title = "Surukle: genislik | Cift tikla: sifirla";
+    th.appendChild(tutamac);
+
+    tutamac.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const baslangicX = e.pageX;
+      const baslangicGenislik = th.offsetWidth;
+
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+
+      function hareket(ev) {
+        const fark = ev.pageX - baslangicX;
+        const yeni = Math.max(60, baslangicGenislik + fark);
+        th.style.width = yeni + "px";
+        th.style.minWidth = yeni + "px";
+
+        tablo.querySelectorAll("tbody tr").forEach((tr) => {
+          const td = tr.children[index];
+          if (td) {
+            td.style.width = yeni + "px";
+            td.style.minWidth = yeni + "px";
+          }
+        });
+      }
+
+      function birak() {
+        document.removeEventListener("mousemove", hareket);
+        document.removeEventListener("mouseup", birak);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+
+        const k = JSON.parse(localStorage.getItem("sutun_genislikleri") || "{}");
+        k[index] = th.offsetWidth;
+        localStorage.setItem("sutun_genislikleri", JSON.stringify(k));
+      }
+
+      document.addEventListener("mousemove", hareket);
+      document.addEventListener("mouseup", birak);
+    });
+
+    tutamac.addEventListener("dblclick", (e) => {
+      e.stopPropagation();
+      th.style.width = "";
+      th.style.minWidth = "";
+
+      tablo.querySelectorAll("tbody tr").forEach((tr) => {
+        const td = tr.children[index];
+        if (td) { td.style.width = ""; td.style.minWidth = ""; }
+      });
+
+      const k = JSON.parse(localStorage.getItem("sutun_genislikleri") || "{}");
+      delete k[index];
+      localStorage.setItem("sutun_genislikleri", JSON.stringify(k));
+    });
+  });
+}
+
+// Tablo yenilendiginde sutun ayarlarini uygula
+const _eskiAdayYukle = window.adaylariYukle;
+if (typeof adaylariYukle === "function") {
+  window.adaylariYukle = async function() {
+    await _eskiAdayYukle.apply(this, arguments);
+    setTimeout(sutunAyarlamayiAktifEt, 50);
+  };
+}
+
+
+
+
+// ═══════════════════════════════════════════════════════════
+// SÜTUN GENİŞLİĞİ AYARLAMA (Excel gibi)
+// ═══════════════════════════════════════════════════════════
+function sutunAyarlamayiAktifEt() {
+  const tablo = document.getElementById("aday-tablo");
+  if (!tablo) return;
+
+  const ths = tablo.querySelectorAll("thead th");
+  if (!ths.length) return;
+
+  const kayitli = JSON.parse(localStorage.getItem("sutun_genislikleri") || "{}");
+
+  ths.forEach((th, index) => {
+    const eski = th.querySelector(".sutun-tutamac");
+    if (eski) eski.remove();
+
+    if (kayitli[index]) {
+      th.style.width = kayitli[index] + "px";
+      th.style.minWidth = kayitli[index] + "px";
+    }
+
+    const tutamac = document.createElement("div");
+    tutamac.className = "sutun-tutamac";
+    tutamac.title = "Sürükle: genişlik | Çift tıkla: sıfırla";
+    th.appendChild(tutamac);
+
+    tutamac.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const baslangicX = e.pageX;
+      const baslangicGenislik = th.offsetWidth;
+
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+
+      function hareket(ev) {
+        const fark = ev.pageX - baslangicX;
+        const yeni = Math.max(60, baslangicGenislik + fark);
+        th.style.width = yeni + "px";
+        th.style.minWidth = yeni + "px";
+
+        tablo.querySelectorAll("tbody tr").forEach((tr) => {
+          const td = tr.children[index];
+          if (td) {
+            td.style.width = yeni + "px";
+            td.style.minWidth = yeni + "px";
+          }
+        });
+      }
+
+      function birak() {
+        document.removeEventListener("mousemove", hareket);
+        document.removeEventListener("mouseup", birak);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+
+        const k = JSON.parse(localStorage.getItem("sutun_genislikleri") || "{}");
+        k[index] = th.offsetWidth;
+        localStorage.setItem("sutun_genislikleri", JSON.stringify(k));
+      }
+
+      document.addEventListener("mousemove", hareket);
+      document.addEventListener("mouseup", birak);
+    });
+
+    tutamac.addEventListener("dblclick", (e) => {
+      e.stopPropagation();
+      th.style.width = "";
+      th.style.minWidth = "";
+
+      tablo.querySelectorAll("tbody tr").forEach((tr) => {
+        const td = tr.children[index];
+        if (td) { td.style.width = ""; td.style.minWidth = ""; }
+      });
+
+      const k = JSON.parse(localStorage.getItem("sutun_genislikleri") || "{}");
+      delete k[index];
+      localStorage.setItem("sutun_genislikleri", JSON.stringify(k));
+    });
+  });
+}
+
+
+// Tablo yenilendiğinde sütun ayarlarını yeniden uygula
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(sutunAyarlamayiAktifEt, 500);
+});

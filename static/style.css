@@ -123,9 +123,9 @@ body {
 
 main {
   padding: 16px 24px;
-  max-width: 100%;
-  width: 100%;
-  margin: 0;
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
 }
 
 .panel {
@@ -134,8 +134,8 @@ main {
   border-radius: 10px;
   padding: 20px;
   margin-bottom: 24px;
-  max-width: 100%;
-  width: 100%;
+  max-width: 100% !important;
+  width: 100% !important;
 }
 
 .panel h2 {
@@ -1802,68 +1802,6 @@ main > section {
 
 
 
-/* ═══════════════════════════════════════════════════════
-   TABLO TAM GENISLIK (TEMIZ)
-   ═══════════════════════════════════════════════════════ */
-.table-scroll {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-#aday-tablo {
-  width: 100%;
-  min-width: 100%;
-  max-width: 100%;
-  table-layout: fixed;
-  border-collapse: collapse;
-}
-
-#aday-tablo th,
-#aday-tablo td {
-  padding: 10px 12px;
-  font-size: 15px;
-  border-bottom: 1px solid #21262d;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  vertical-align: middle;
-}
-
-#aday-tablo th:nth-child(1),
-#aday-tablo td:nth-child(1) {
-  width: 55px;
-  text-align: center;
-}
-
-#aday-tablo th:nth-child(2),
-#aday-tablo td:nth-child(2) {
-  width: 200px;
-}
-
-#aday-tablo th:nth-child(3),
-#aday-tablo td:nth-child(3) {
-  width: 95px;
-}
-
-#aday-tablo th:nth-child(4),
-#aday-tablo td:nth-child(4) {
-  width: auto;
-}
-
-#aday-tablo th:nth-child(n+5):nth-child(-n+11),
-#aday-tablo td:nth-child(n+5):nth-child(-n+11) {
-  width: 75px;
-  text-align: center;
-}
-
-#aday-tablo th:nth-child(12),
-#aday-tablo td:nth-child(12) {
-  width: 165px;
-  text-align: right;
-  white-space: nowrap;
-  overflow: visible;
-}
-
 /* AI Önerileri paneli - gerçek strateji/olasılık çıktısı render stili */
 .ai-oneri-metin {
   padding: 14px 16px;
@@ -1882,4 +1820,165 @@ main > section {
   font-size: 14px;
   color: var(--text);
   line-height: 1.5;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   SON SÜTUN (SİL BUTONU) — DARALT
+   ═══════════════════════════════════════════════════════════ */
+
+
+
+/* ID sutunu - dar */
+
+
+/* Isim sutunu */
+
+
+/* Tarih sutunu */
+
+
+/* Aciklama sutunu - esnek, kalan yeri alir */
+
+
+/* Boolean sutunlari (Davet, Randevu, ...) - dar */
+
+
+/* Son sutun - SADECE Sil butonu - cok dar */
+
+
+
+/* ═══════════════════════════════════════════════════════════
+   ADAY TABLOSU — TEMİZ SÜTUN DÜZENİ
+   ═══════════════════════════════════════════════════════════ */
+#aday-tablo {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+#aday-tablo th,
+#aday-tablo td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #21262d;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+/* ID */
+#aday-tablo th:nth-child(1),
+#aday-tablo td:nth-child(1) {
+  width: 55px;
+  text-align: center;
+}
+
+/* İsim */
+#aday-tablo th:nth-child(2),
+#aday-tablo td:nth-child(2) {
+  width: 200px;
+  white-space: normal;
+}
+
+/* Tarih */
+#aday-tablo th:nth-child(3),
+#aday-tablo td:nth-child(3) {
+  width: 95px;
+  text-align: center;
+}
+
+/* Açıklama — genis, sabit deger */
+#aday-tablo th:nth-child(4),
+#aday-tablo td:nth-child(4) {
+  width: 500px !important;
+  min-width: 300px !important;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+/* Boolean sütunları — sabit dar */
+#aday-tablo th:nth-child(n+5):nth-child(-n+11),
+#aday-tablo td:nth-child(n+5):nth-child(-n+11) {
+  width: 65px;
+  text-align: center;
+}
+
+/* Son sütun — SADECE Sil butonu */
+#aday-tablo th:last-child,
+#aday-tablo td:last-child {
+  width: 85px;
+  text-align: center;
+  padding-right: 12px;
+  overflow: visible;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   TABLE SCROLL — TAM GENISLIK
+   ═══════════════════════════════════════════════════════════ */
+.table-scroll {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+}
+
+/* Son sutun min genislik */
+#aday-tablo th:last-child,
+#aday-tablo td:last-child {
+  min-width: 85px !important;
+  width: 85px !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   TABLE SCROLL — TAM GENISLIK
+   ═══════════════════════════════════════════════════════════ */
+.table-scroll {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+}
+
+/* Son sutun min genislik */
+#aday-tablo th:last-child,
+#aday-tablo td:last-child {
+  min-width: 85px !important;
+  width: 85px !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   TAM GENISLIK — KESIN COZUM
+   ═══════════════════════════════════════════════════════════ */
+html, body {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 100% !important;
+  overflow-x: hidden;
+}
+
+main {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 100% !important;
+  padding: 16px 20px !important;
+  margin: 0 !important;
+  box-sizing: border-box;
+}
+
+.panel {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+.table-scroll {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+}
+
+#aday-tablo {
+  width: 100% !important;
+  min-width: 100% !important;
 }

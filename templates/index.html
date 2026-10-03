@@ -15,7 +15,6 @@
 
   <div class="grid">
     <input id="isim" placeholder="İsim*">
-    <input id="tarih" placeholder="gg aa yy">
     <input id="aciklama" placeholder="Açıklama">
   </div>
 
@@ -45,23 +44,20 @@
 
 <section class="panel">
 
-  <h2>
+<h2>
     Aday Listesi
-<span id="watcher-not" class="muted"></span>
-
-    
-
-    
+    <span id="watcher-not" class="muted"></span>
   </h2>
 
-  <div style="margin-bottom:12px;">
+<div style="margin-bottom:12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
     <input
       id="aday-ara"
       type="text"
       placeholder="Ara: isim, aciklama, tarih..."
-      style="width:100%; padding:12px; font-size:15px; background:#0d1117; color:#c9d1d9; border:1px solid #30363d; border-radius:6px;"
+      style="flex:1; min-width:300px; padding:12px; font-size:15px; background:#0d1117; color:#c9d1d9; border:1px solid #30363d; border-radius:6px;"
       oninput="adayAra()"
     >
+    <span style="color:#8b949e; font-size:13px; white-space:nowrap;">💡 Kartı görmek için satıra tıklayın</span>
   </div>
 
   <div class="table-scroll">
@@ -89,10 +85,7 @@
     </table>
   </div>
 
-  <div class="table-hint">
-    💡 Adayın adına veya satırına tıklayarak <b>Aday Kartı</b>nı açabilirsiniz.
-  </div>
-
+  
 </section>
 
 

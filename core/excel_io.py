@@ -104,15 +104,9 @@ def excel_ice_aktar(excel_yolu):
                 continue
 
             # Tarih
-            tarih = ""
-            if tarih_i is not None and tarih_i < len(row) and row[tarih_i]:
-                v = row[tarih_i]
-                try:
-                    tarih = pd.to_datetime(v).strftime("%d %m %y")
-                except Exception:
-                    tarih = str(v).strip()
-            if not tarih:
-                tarih = bugun
+            # Tarih: HER ZAMAN sistem tarihi (Excel tarihi yok sayilir)
+
+            tarih = bugun
 
             # Açıklama
             aciklama = ""
