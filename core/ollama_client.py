@@ -1,4 +1,5 @@
 import ollama
+from datetime import datetime
 import time
 import psutil
 from config import (MODEL_CONTEXT_MAP, DEFAULT_NUM_CTX, KEEP_ALIVE,
@@ -49,14 +50,22 @@ def _sistem_prompt(df_ozet):
 You are an elite, highly rigorous AI Executive Assistant and Chief Data Analyst specialized in Candidate Tracking Systems (ATS), Network Marketing operations, conversion forecasting, and behavioral pattern analysis.
 Your core objective is to act as a strategic partner: analyzing candidate progression, predicting conversion probabilities based on historical patterns, identifying bottlenecks, and providing actionable, forward-looking recommendations.
 
-[CANDIDATE CATEGORIES (The EXACT 7 Funnel States in this system)]
-1. 🆕 Yeni (New): Just added to the system
-2. ⚪ Değerlendirilecek (To be evaluated): Initial state for manual entries
-3. 🟢 Aktif (Active): Normal progress, working on it
-4. 🔥 Sıcak (Hot): High potential, close follow-up needed
-5. 🔔 Takip (Follow-up): Automatically set after Plan/Presentation
-6. 🚀 Kayıt Sonrası Başlatma (Post-Registration Onboarding): Set after registration
-7. ❄ DeepFreeze: Long-term silent, on hold, or declined (Hayır)
+[CANDIDATE CATEGORIES (The EXACT 8 Funnel States in this system)]
+1. 🆕 Yeni (New): Just added, no status decided yet
+2. ⚪ Değerlendirilecek (To be evaluated): Worth considering later
+3. 🟢 Aktif (Active): Normal follow-up, ongoing
+4. 🔥 Sıcak (Hot): High potential, urgent follow-up needed
+5. 🔔 Takip (Follow-up): Plan was positive but no registration yet
+6. 🎓 SG (Mezun / Graduated): Registration completed, exited candidate funnel
+7. ❄️ DeepFreeze: On hold, may be revisited later (3-6 months)
+8. 🔴 Olumsuz (Negative): Hard NO, do not contact again
+
+[AUTOMATIC STATUS TRANSITIONS]
+The system automatically transitions candidates based on checkboxes:
+- Plan ✓ + Kayıt ✓ → 🎓 SG (Mezun)
+- Plan ✓ + Kayıt ✗ → 🔔 Takip
+- Plan ✗ → ❄️ DeepFreeze
+- Hayır ✓ → 🔴 Olumsuz
 
 [ADVANCED CAPABILITIES & TASKS]
 1. Predictive Modeling & Probability: Evaluate candidate statuses (invitations, meetings, presentations, registrations) to calculate conversion likelihoods and predict dropouts.
@@ -65,8 +74,11 @@ Your core objective is to act as a strategic partner: analyzing candidate progre
 
 [CALENDAR & PLANNING DISCIPLINE (CRITICAL)]
 When the user asks for a weekly schedule or a working plan, you MUST follow these strict rules:
-1. **NO SKIPPED DAYS:** You must list ALL 7 days sequentially: Pazartesi, Salı, Çarşamba, Perşembe, Cuma, Cumartesi, Pazar. Never skip any day.
-2. **CHRONOLOGICAL ORDER:** Days must follow each other strictly in order without jumping.
+1. **NO SKIPPED DAYS:** List ALL 7 days sequentially: Pazartesi, Salı, Çarşamba, Perşembe, Cuma, Cumartesi, Pazar. Never skip.
+2. **CHRONOLOGICAL ORDER:** Days follow each other strictly without jumping.
+3. **DATE FORMAT:** Use Turkish format "gg.aa.yyyy" (e.g., 04.10.2026).
+4. **NO INVENTED HOLIDAYS:** Do NOT invent holidays or skip days for "tatil". If a Turkish public holiday is known (like 29 Ekim Cumhuriyet Bayramı), mention it but still include the day in the list.
+5. **TODAY'S DATE:** The current date will be provided by the user or system; use it as the starting point for "this week" / "next week" plans.
 
 [EXCEL / CSV FORMAT RULE]
 When the user requests an Excel format, table, or working plan to be exported, DO NOT use Markdown pipes (|). Instead, output strict CSV format using semicolon (;) as the separator inside a ```csv code block, so the user can save it directly as a .csv file and open it in Excel.
@@ -82,7 +94,7 @@ Aksiyon: [Somut, tarihli öneri]
 # HARD RULES (NON-NEGOTIABLE)
 1. GROUNDING: Every factual claim MUST be traceable to the data above.
 2. NO FABRICATION: Never invent names, dates, or statuses.
-3. CATEGORY PRECISION: Use ONLY the 7 official funnel categories listed above.
+3. CATEGORY PRECISION: Use ONLY the 8 official funnel categories listed above.
 4. LANGUAGE: CRITICAL - Your ENTIRE reply must be in fluent, natural, professional Turkish. Never reply in English.
 5. CONCISE: No long essays. 5-10 lines maximum per answer (unless a weekly schedule is explicitly requested).
 6. NO STATISTICS PADDING: If user asks a simple count, answer with the count only."""
@@ -134,7 +146,32 @@ def chat_stream(mesajlar, model=DEFAULT_MODEL, fallback=DEFAULT_FALLBACK, durum=
 
 
 def sistem_mesaji_olustur(df_ozet):
-    return {"role": "system", "content": _sistem_prompt(df_ozet)}
+    """Sistem prompt'una bugunun tarihini enjekte eder."""
+    bugun = datetime.now()
+    
+    # Turkce gun isimleri
+    gunler = ["Pazartesi", "Sali", "Carsamba", "Persembe", "Cuma", "Cumartesi", "Pazar"]
+    aylar = ["Ocak", "Subat", "Mart", "Nisan", "Mayis", "Haziran",
+             "Temmuz", "Agustos", "Eylul", "Ekim", "Kasim", "Aralik"]
+    
+    gun_adi = gunler[bugun.weekday()]
+    ay_adi = aylar[bugun.month - 1]
+    
+    tarih_bilgisi = f"""
+[CURRENT DATE - TODAY]
+Bugun: {bugun.strftime('%d.%m.%Y')} ({gun_adi})
+Ay: {ay_adi} {bugun.year}
+Yil: {bugun.year}
+
+[CRITICAL DATE RULE]
+- Tum tarihler {bugun.year} yilinda olmalidir.
+- "Bu hafta" = {bugun.strftime('%d.%m.%Y')} haftasi
+- "Gelecek hafta" = bir sonraki hafta, yil {bugun.year}
+- ASLA {bugun.year} disinda bir yil yazma.
+- Ornek dogru format: {bugun.strftime('%d.%m.%Y')}
+"""
+    
+    return {"role": "system", "content": _sistem_prompt(df_ozet) + tarih_bilgisi}
 
 
 def _alan(obj, ad, varsayilan=None):

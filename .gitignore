@@ -54,3 +54,10 @@ _GITHUB_TEMP/
 *.bak
 *~
 *.DURAK2_BACKUP*
+
+DOSYALAR.txt
+*yedek*
+*backup*
+*BACKUP*
+TUM_KODLAR*.txt
+*_PARCA_*.txt

@@ -831,3 +831,63 @@ def aday_linkedin_guncelle(aday_id, linkedin_url):
         )
         c.commit()
         return c.total_changes > 0
+
+
+
+def aday_durum_otomatik_guncelle(aday_id, davet=0, plan=0, kayit=0, hayir=0):
+    """Checkbox'lara gore statuyu otomatik gunceller.
+    
+    Kurallar:
+    - Hayir ✓ -> 🔴 Olumsuz
+    - Plan ✓ + Kayit ✓ -> 🎓 SG
+    - Plan ✓ + Kayit ✗ -> 🔔 Takip
+    - Plan ✗ (ve davet yok) -> ❄️ DeepFreeze
+    """
+    yeni_durum = None
+    
+    if hayir == 1:
+        yeni_durum = "🔴 Olumsuz"
+    elif plan == 1 and kayit == 1:
+        yeni_durum = "🎓 SG"
+    elif plan == 1 and kayit == 0:
+        yeni_durum = "🔔 Takip"
+    elif plan == 0 and davet == 1:
+        yeni_durum = "🟢 Aktif"  # Davet var ama plan yok
+    else:
+        return False  # Statu degismedi
+    
+    # Statu guncelle
+    with _conn(ADAY_DB) as c:
+        eski = c.execute(
+            "SELECT isim FROM adaylar WHERE id=?",
+            (aday_id,)
+        ).fetchone()
+        
+        if not eski:
+            return False
+        
+        isim = eski["isim"] or ""
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        profil = c.execute(
+            "SELECT id FROM aday_profil WHERE isim=? LIMIT 1",
+            (isim,)
+        ).fetchone()
+        
+        if profil:
+            c.execute(
+                "UPDATE aday_profil SET durum=?, updated_at=? WHERE id=?",
+                (yeni_durum, now, profil["id"])
+            )
+        else:
+            c.execute(
+                """
+                INSERT INTO aday_profil
+                (isim, telefon, email, adres, durum, aktif, created_at, updated_at)
+                VALUES (?, '', '', '', ?, 1, ?, ?)
+                """,
+                (isim, yeni_durum, now, now)
+            )
+        c.commit()
+        print(f"Otomatik statu: {isim} -> {yeni_durum}")
+        return True

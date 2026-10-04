@@ -24,8 +24,7 @@ MODEL_CONTEXT_MAP = {
     "qwen2.5:7b": 16384,
     "qwen2.5:14b": 8192,
     "llama3.1:latest": 8192,
-    "ministral-3:14b": 8192,
-    "qwen2.5:3b": 4096,
+        "qwen2.5:3b": 4096,
     "gemma2:2b": 4096,
 }
 

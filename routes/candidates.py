@@ -1,6 +1,7 @@
 ﻿from flask import Blueprint, jsonify, request
 
 from core.database import (
+    aday_durum_otomatik_guncelle,
     adaylari_getir,
     aday_ekle,
     aday_sil,
@@ -85,36 +86,126 @@ def profil_guncelle(aday_id):
 @bp.route("/<int:aday_id>/gelisme", methods=["POST"])
 def gelisme_ekle(aday_id):
     d = request.get_json() or {}
-
+    
     tarih = str(d.get("tarih", "")).strip()
     olay_tipi = str(d.get("olay_tipi", "Not")).strip()
     olay_metni = str(d.get("olay_metni", "")).strip()
     durum = str(d.get("durum", "")).strip()
-
-    if not olay_metni:
-        return jsonify({
-            "ok": False,
-            "error": "Gelişme açıklaması boş bırakılamaz."
-        }), 400
-
-    ok, msg = aday_gelisme_ekle(
-        aday_id,
-        tarih,
-        olay_tipi,
-        olay_metni,
-        durum
-    )
-
+    
+    # YENI: Randevu tarihi/saati
+    randevu_tarihi = str(d.get("randevu_tarihi", "")).strip()
+    randevu_saati = str(d.get("randevu_saati", "")).strip()
+    
+    # YENI: Randevu tarihi/saati
+    randevu_tarihi = str(d.get("randevu_tarihi", "")).strip()
+    randevu_saati = str(d.get("randevu_saati", "")).strip()
+    
+    if not olay_metni and olay_tipi != "Sadece Durum Değiştir":
+        return jsonify({"ok": False, "error": "Gelisme aciklamasi bos."}), 400
+    
+    ok, msg = aday_gelisme_ekle(aday_id, tarih, olay_tipi, olay_metni, durum)
+    
     if not ok:
-        return jsonify({
-            "ok": False,
-            "error": msg
-        }), 404
-
-    return jsonify({
-        "ok": True,
-        "message": msg
-    })
+        return jsonify({"ok": False, "error": msg}), 404
+    
+    # ═══════════════════════════════════════════════════════════
+    # OLAY TIPINDEN CHECKBOX CIKARIMI
+    # ═══════════════════════════════════════════════════════════
+    import sqlite3
+    from config import ADAY_DB
+    
+    davet = 0
+    plan = 0
+    kayit = 0
+    hayir = 0
+    takip = 0
+    randevu = 0
+    
+    tip = olay_tipi.lower()
+    metin = olay_metni.lower()
+    
+    # OLAY TIPINDEN (birincil)
+    if tip == "davet":
+        davet = 1
+    elif tip == "randevu":
+        randevu = 1
+        plan = 1  # Randevu = plan yapildi
+    elif tip == "plan":
+        plan = 1
+    elif tip == "kayit" or tip == "kayıt":
+        kayit = 1
+    elif tip == "takip":
+        takip = 1
+    elif tip == "olumsuz":
+        hayir = 1
+    elif tip == "görüşme":
+        # Görüşme = randevu yapıldı sayilir
+        randevu = 1
+    elif tip == "teklif":
+        plan = 1
+    
+    # METINDEN (ikincil - fallback)
+    if "plan anlatıldı" in metin or "plan anlatildi" in metin:
+        plan = 1
+    if "kayıt yapıldı" in metin or "kayit yapildi" in metin or "kayıt oldu" in metin or "kayit oldu" in metin:
+        kayit = 1
+    if "davet yapıldı" in metin or "davet yapildi" in metin:
+        davet = 1
+    if "hayır dedi" in metin or "hayir dedi" in metin or "reddetti" in metin:
+        hayir = 1
+    if "randevu oluştu" in metin or "randevu olustu" in metin:
+        randevu = 1
+    
+    # ═══════════════════════════════════════════════════════════
+    # adaylar tablosunu guncelle
+    # ═══════════════════════════════════════════════════════════
+    try:
+        conn = sqlite3.connect(str(ADAY_DB))
+        c = conn.cursor()
+        
+        updates = []
+        if davet == 1:
+            updates.append("davet = 1")
+        if plan == 1:
+            updates.append("plan = 1")
+        if kayit == 1:
+            updates.append("kayit = 1")
+        if hayir == 1:
+            updates.append("hayir = 1")
+        if takip == 1:
+            updates.append("takip = 1")
+        if randevu == 1:
+            updates.append("randevu = 1")
+        if randevu_tarihi:
+            updates.append(f"randevu_tarihi = '{randevu_tarihi}'")
+        if randevu_saati:
+            updates.append(f"randevu_saati = '{randevu_saati}'")
+        
+        if updates:
+            sql = f"UPDATE adaylar SET {', '.join(updates)} WHERE id = ?"
+            c.execute(sql, (aday_id,))
+            conn.commit()
+            print(f"[SYNC] Aday {aday_id} -> {updates}")
+        else:
+            print(f"[SYNC] Aday {aday_id} -> degisiklik yok")
+        
+        conn.close()
+    except Exception as e:
+        print(f"[UYARI] Checkbox sync hatasi: {e}")
+    
+    # ═══════════════════════════════════════════════════════════
+    # OTOMATIK STATU GECISI
+    # ═══════════════════════════════════════════════════════════
+    try:
+        from core.database import aday_durum_otomatik_guncelle
+        aday_durum_otomatik_guncelle(
+            aday_id,
+            davet=davet, plan=plan, kayit=kayit, hayir=hayir
+        )
+    except Exception as e:
+        print(f"[UYARI] Otomatik statu hatasi: {e}")
+    
+    return jsonify({"ok": True, "message": msg})
 
 
 @bp.route("/<int:aday_id>", methods=["DELETE"])
@@ -146,3 +237,20 @@ def linkedin_guncelle(aday_id):
         return jsonify({"ok": False, "error": "Aday bulunamadi."}), 404
 
     return jsonify({"ok": True, "message": "LinkedIn URL guncellendi."})
+
+
+
+@bp.route("/<int:aday_id>/otomatik-durum", methods=["POST"])
+def otomatik_durum(aday_id):
+    """Checkbox'lara gore statuyu otomatik gunceller."""
+    d = request.get_json() or {}
+    
+    degisti = aday_durum_otomatik_guncelle(
+        aday_id,
+        davet=int(d.get("davet", 0)),
+        plan=int(d.get("plan", 0)),
+        kayit=int(d.get("kayit", 0)),
+        hayir=int(d.get("hayir", 0))
+    )
+    
+    return jsonify({"ok": True, "degisti": degisti})

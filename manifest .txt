@@ -1,0 +1,247 @@
+═══════════════════════════════════════════════════════════════════════
+  AI_YEREL-LiNKEDiN_TAKiP — ÇALIŞMA MANİFESTİ
+  Tarih: 2026-10-05
+  Amaç: Sonraki sohbetin tüm süreci kavraması
+═══════════════════════════════════════════════════════════════════════
+
+## 1. PROJE KİMLİĞİ
+
+- Proje adı: AI_YEREL-LiNKEDiN_TAKiP
+- Yerel yol: C:\AI_YEREL\LiNKEDiN_TAKiP
+- GitHub: https://github.com/karyenic/AI_YEREL-LiNKEDiN_TAKiP
+- Branch: main
+- Son commit: TUM_KODLAR.txt push edildi (b749ea8)
+- Amaç: LinkedIn aday takip programı (ATS benzeri)
+- Kullanıcı: Tek kişi (karyenic)
+- Donanım: Intel Arc 140V (16GB) + 32GB RAM + IPEX/SYCL
+
+## 2. TEKNOLOJİ YIĞINI
+
+- Backend: Flask (önceden Streamlit idi, Flask'a geçildi)
+- Frontend: Jinja2 + saf JS + CSS
+- DB: SQLite (2 adet: linkedin_takip.db, sohbet_gecmisi.db)
+- AI: Ollama + IPEX-LLM (Intel Arc için)
+- Excel: openpyxl + pandas + watchdog (canlı izleme)
+- Python: 3.11+ (venv aktif)
+- Port: 5050 (Flask), 11434 (Ollama)
+
+## 3. KLASÖR YAPISI
+
+C:\AI_YEREL\LiNKEDiN_TAKiP\
+├── app.py                  (Flask giriş + warm-up + watcher)
+├── config.py               (sabitler, model listesi, router)
+├── Baslat.bat              (IPEX env + Ollama + Flask başlatıcı)
+├── model_router.py         (router mantığı — şu an devrede)
+├── model_entegre.py        (model entegrasyonu)
+├── router_onar.py          (router onarım betiği)
+├── frontend_ai_guncelle.py (frontend AI güncelleme)
+├── requirements.txt
+│
+├── core/
+│   ├── __init__.py
+│   ├── database.py         (SQLite işlemleri — 27 KB)
+│   ├── excel_io.py         (Excel import/export — 7 KB)
+│   ├── ollama_client.py    (Ollama çağrıları + num_ctx — 8 KB)
+│   └── ollama_client_*.txt (yedekler)
+│
+├── routes/
+│   ├── __init__.py
+│   ├── candidates.py       (aday API — 7 KB)
+│   ├── chat.py             (chat endpoint + streaming — 4 KB)
+│   ├── excel.py            (Excel API — 2 KB)
+│   ├── metrics.py          (metrikler — 6 KB)
+│   ├── system.py           (sistem — 0.6 KB)
+│   ├── keep.py             (Keep entegrasyonu — 6 KB)
+│   └── word.py             (Word export — 3 KB)
+│
+├── templates/
+│   ├── base.html
+│   ├── index.html          (ana sayfa — 11 KB)
+│   ├── chat.html           (chat sayfası — 1 KB)
+│   └── metrics.html        (metrikler — 3 KB)
+│
+├── static/
+│   ├── app.js              (frontend JS — 45 KB)
+│   ├── style.css           (CSS — 34 KB)
+│   └── app_*.js            (yedekler)
+│
+└── data/
+    ├── linkedin_takip.db   (aday DB)
+    ├── sohbet_gecmisi.db   (chat DB)
+    └── izlenen_adaylar.xlsx (canlı izlenen Excel)
+
+## 4. SORUNLAR VE ÇÖZÜMLER (KRONOLOJİK)
+
+### Sorun 1: Çift Model (Router) Çarpışması
+- Tespit: İlk konuşmada fark edildi
+- Sebep: Router her soruda model değiştiriyor → KV Cache sıfırlanıyor
+- Durum: ÇÖZÜLMEDİ (router hâlâ devrede)
+- Not: Kullanıcı "router şimdilik kalsın, sonra değerlendirelim" dedi
+
+### Sorun 2: Dinamik num_ctx
+- Tespit: İlk konuşmada fark edildi
+- Sebep: Her soruda num_ctx değişiyor → KV Cache yeniden kuruluyor
+- Çözüm: config.py'de MODEL_CONTEXT_MAP ile sabitlendi
+- Durum: ÇÖZÜLDÜ ✅
+
+### Sorun 3: Ollama'nın Gizli 2048 Token Sınırı
+- Tespit: İlk konuşmada fark edildi
+- Sebep: Ollama varsayılan num_ctx=2048
+- Çözüm: ollama.chat()'e options={"num_ctx": ...} eklendi
+- Durum: ÇÖZÜLDÜ ✅
+
+### Sorun 4: .bat Race Condition
+- Tespit: İlk konuşmada fark edildi
+- Sebep: Streamlit, Ollama hazır olmadan başlıyordu
+- Çözüm: Baslat.bat'ta curl readiness loop eklendi
+- Durum: ÇÖZÜLDÜ ✅ (ama sonradan bozuldu — bkz. Sorun 9)
+
+### Sorun 5: İç İçe ollama.chat() Hatası
+- Tespit: linkedin_takip.py'de
+- Sebep: `ollama.chat(response = ollama.chat(...))` yanlış syntax
+- Çözüm: Tek çağrıya indirildi
+- Durum: ÇÖZÜLDÜ ✅
+
+### Sorun 6: Warm-up Eksikliği
+- Tespit: İlk soru yavaş geliyordu
+- Sebep: Model VRAM'e yüklenmemiş
+- Çözüm: app.py'de _arka_plan() thread'inde warm_up() çağrılıyor
+- Durum: ÇÖZÜLDÜ ✅ (ama şu an çalışmıyor — bkz. Sorun 10)
+
+### Sorun 7: OLLAMA_NUM_GPU=999 Parse Hatası
+- Tespit: Ollama log'unda
+- Sebep: `setx OLLAMA_NUM_GPU "999"` → sonda boşluk → `"999 "` → parse error
+- Çözüm: setx tırnakları kaldırıldı → `setx OLLAMA_NUM_GPU 999`
+- Durum: ÇÖZÜLDÜ ✅ (registry'de 999, sonda boşluk yok)
+
+### Sorun 8: Router Hâlâ Devrede
+- Tespit: config.py'de MODEL_ROUTER var, ollama_client.py'de _model_sec() tanımlı
+- Sebep: Router mantığı chat_stream()'e entegre edilmemiş ama config'de duruyor
+- Durum: DEVAM EDİYOR ⚠️
+- Not: _model_sec() ölü kod — çağrılmıyor
+
+### Sorun 9: Baslat.bat'ın Bozulması (KRİTİK)
+- Tespit: AI (ben) tarafından değiştirildi
+- Sebep: Ben `set` komutlarını kaldırdım, `setx` + `start cmd /c "set ... && ..."` yaptım
+- Sonuç: Ollama env var'ları almıyor → model yüklenmiyor → GPU çalışmıyor
+- Durum: DEVAM EDİYOR ⚠️ (kullanıcı yedekten geri dönecek)
+- Çözüm: Baslat_bat_yedek.txt'deki ESKİ versiyona dön
+- Eski versiyonda: `set` komutları + `start cmd /c ""%OLLAMA_EXE%" serve"` (çift tırnak)
+
+### Sorun 10: Ollama Boşta (Model VRAM'de Değil)
+- Tespit: ollama ps çıktısı boş
+- Sebep: Warm-up başarısız (Sorun 9 yüzünden)
+- Durum: DEVAM EDİYOR ⚠️
+- Çözüm: Baslat.bat düzeltilince çözülecek
+
+### Sorun 11: app.py'de 4 Kez Tekrar Eden Blok
+- Tespit: _arka_plan() içinde durum_guncelle bloğu 4 kez
+- Sebep: Kopyala-yapıştır hatası
+- Durum: DEVAM EDİYOR ⚠️
+- Çözüm: Tek _bildirim_kaydet() fonksiyonuna indir
+
+### Sorun 12: static/app.js'de 4 Kez Tekrar Eden Fonksiyon
+- Tespit: excelBildirimGoster() 4 kez tanımlı
+- Sebep: Kopyala-yapıştır hatası
+- Durum: DEVAM EDİYOR ⚠️
+- Çözüm: Tek fonksiyona indir
+
+### Sorun 13: database.py'de Kolon Eksikliği (ŞÜPHELİ)
+- Tespit: aday_profil tablosunda durum kolonu yok gibi
+- Sebep: CREATE TABLE'da tanımlı değil
+- Durum: DOĞRULANMADI ⚠️
+- Çözüm: Migration ile ekle (_kolon_ekle)
+
+### Sorun 14: DEFAULT_MODEL = "deepseek-r1-64k" (AĞIR)
+- Tespit: config.py'de
+- Sebep: 65K context → 3.5 GB KV Cache → yavaş
+- Durum: DEVAM EDİYOR ⚠️
+- Çözüm: "qwen2.5:7b" (16K context, hafif) yap
+
+### Sorun 15: KEEP_ALIVE = "30m" (KISA)
+- Tespit: config.py'de
+- Sebep: 30 dakika sonra model VRAM'den atılıyor
+- Durum: DEVAM EDİYOR ⚠️
+- Çözüm: "24h" yap
+
+## 5. KRİTİK DOSYA İÇERİKLERİ (ÖZET)
+
+### Baslat.bat (ESKİ ÇALIŞAN VERSİYON)
+```bat
+@echo off
+chcp 65001 >nul
+title LinkedIn Takip - Flask
+color 0A
+
+echo ================================================
+echo   LinkedIn Takip Asistani (Flask)
+echo ================================================
+
+set OLLAMA_EXE=C:\AI_IPEX\Ollama\portable\ollama.exe
+
+if not exist "%OLLAMA_EXE%" (
+    echo [UYARI] IPEX Ollama bulunamadi: %OLLAMA_EXE%
+    echo         Standart Ollama ile devam edilecek, Intel Arc hizlandirmasi CALISMAYACAK.
+    set OLLAMA_EXE=ollama
+)
+
+REM IPEX-LLM RESMI DOKUMANINDAKI TUM GEREKLI AYARLAR
+set OLLAMA_NUM_GPU=999
+set ONEAPI_DEVICE_SELECTOR=level_zero:0
+set ZES_ENABLE_SYSMAN=1
+set SYCL_CACHE_PERSISTENT=1
+set no_proxy=localhost,127.0.0.1
+set NO_PROXY=localhost,127.0.0.1
+set OLLAMA_HOST=127.0.0.1:11434
+set OLLAMA_NUM_PARALLEL=1
+set OLLAMA_KEEP_ALIVE=30m
+set OLLAMA_FLASH_ATTENTION=false
+
+echo [0/4] IPEX ortam degiskenleri ayarlandi:
+echo        OLLAMA_NUM_GPU = %OLLAMA_NUM_GPU%  (tum katmanlar GPU'da)
+echo        ONEAPI_DEVICE_SELECTOR = %ONEAPI_DEVICE_SELECTOR%
+echo        Kullanilan Ollama: %OLLAMA_EXE%
+
+taskkill /f /im ollama.exe >nul 2>&1
+taskkill /f /im ollama-lib.exe >nul 2>&1
+taskkill /f /im "ollama app.exe" >nul 2>&1
+timeout /t 2 /nobreak >nul
+
+echo [1/4] Ollama (IPEX) baslatiliyor...
+start "Ollama-IPEX" /min cmd /c ""%OLLAMA_EXE%" serve"
+
+echo [2/4] Ollama portu bekleniyor (max 45 sn)...
+set /a n=0
+:W
+timeout /t 1 /nobreak >nul
+powershell -NoProfile -Command "try { (New-Object Net.Sockets.TcpClient).Connect('127.0.0.1',11434); exit 0 } catch { exit 1 }" >nul 2>&1
+if %errorlevel%==0 goto OLLAMA_HAZIR
+set /a n+=1
+if %n% GEQ 45 goto HATA
+goto W
+
+:OLLAMA_HAZIR
+echo        Ollama hazir.
+
+echo [3/4] Python venv aktif ediliyor...
+cd /d "%~dp0"
+if exist ".venv\Scripts\activate.bat" (
+    call ".venv\Scripts\activate.bat"
+    echo        .venv aktif.
+) else if exist "venv\Scripts\activate.bat" (
+    call "venv\Scripts\activate.bat"
+    echo        venv aktif.
+) else (
+    echo        venv bulunamadi, global python kullanilacak.
+)
+
+echo [4/4] Flask baslatiliyor...
+python app.py
+
+pause
+goto :eof
+
+:HATA
+echo [HATA] Ollama 45 saniyede acilmadi.
+echo        Ollama'yi manuel kontrol edin: %OLLAMA_EXE% serve
+pause

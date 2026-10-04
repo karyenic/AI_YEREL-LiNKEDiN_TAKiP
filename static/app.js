@@ -488,7 +488,12 @@ async function gelismeKaydet() {
           tarih,
           olay_tipi,
           olay_metni,
-          durum
+          durum,
+          // Checkbox'lar (kart gelisme formundan)
+          davet: document.getElementById("gelisme-davet")?.checked ? 1 : 0,
+          plan: document.getElementById("gelisme-plan")?.checked ? 1 : 0,
+          kayit: document.getElementById("gelisme-kayit")?.checked ? 1 : 0,
+          hayir: document.getElementById("gelisme-hayir")?.checked ? 1 : 0
         })
       }
     );
@@ -1163,12 +1168,9 @@ async function modelleriYukle() {
   sel.appendChild(otomatikOpt);
 
   const modeller = [
-    "deepseek-r1-64k",
-    "qwen2.5-coder:14b",
-    "deepseek-r1:7b",
     "qwen2.5:7b",
-    "llama3.1:latest",
-    "ministral-3:14b"
+    "deepseek-r1:7b",
+    "llama3.1:latest"
   ];
 
   for (const m of modeller) {
@@ -2171,12 +2173,14 @@ function durumTopp(durum) {
   if (!durum) return "🆕";
   const d = String(durum).trim();
 
+  if (d.includes("Yeni") || d.includes("🆕")) return "🆕";
   if (d.includes("Değerlendirilecek") || d.includes("⚪")) return "⚪";
   if (d.includes("Sıcak") || d.includes("🔥")) return "🔥";
   if (d.includes("Aktif") || d.includes("🟢")) return "🟢";
   if (d.includes("Takip") || d.includes("🔔")) return "🔔";
-  if (d.includes("Başlatma") || d.includes("🚀")) return "🚀";
+  if (d.includes("SG") || d.includes("🎓")) return "🎓";
   if (d.includes("DeepFreeze") || d.includes("❄")) return "❄️";
+  if (d.includes("Olumsuz") || d.includes("🔴")) return "🔴";
 
   return "🆕";
 }
