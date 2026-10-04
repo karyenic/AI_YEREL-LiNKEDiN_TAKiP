@@ -726,9 +726,7 @@ function mesajGoster(
   ) {
 
     const rozet =
-      document.createElement(
-        "div"
-      );
+      document.createElement("div");
 
     rozet.className =
       "model-rozet" +
@@ -924,8 +922,7 @@ async function chatGonder() {
         zaman:
           new Date().toLocaleTimeString(
             "tr-TR"
-          ),
-        model: model === "otomatik" ? "otomatik (seçiliyor...)" : model
+          )
       }
     );
 
@@ -996,7 +993,6 @@ async function chatGonder() {
       new TextDecoder();
 
     let buf = "";
-    let rozetGuncellendi = false;
 
     while (true) {
 
@@ -1037,21 +1033,34 @@ async function chatGonder() {
               p.slice(6)
             );
 
-          if (obj.model && !rozetGuncellendi) {
-            const mevcutRozet = wrap.querySelector(".model-rozet");
-            if (mevcutRozet) {
-              mevcutRozet.className =
+          if (obj.done) {
+
+            if (obj.model) {
+
+              const rozet =
+                document.createElement(
+                  "div"
+                );
+
+              rozet.className =
                 "model-rozet" +
-                (obj.fallback ? " fb" : "");
-              mevcutRozet.textContent =
+                (
+                  obj.fallback
+                    ? " fb"
+                    : ""
+                );
+
+              rozet.textContent =
                 obj.fallback
                   ? `🤖 ${obj.model} · FB`
                   : `🤖 ${obj.model}`;
-              rozetGuncellendi = true;
-            }
-          }
 
-          if (obj.done) {
+              wrap.insertBefore(
+                rozet,
+                wrap.firstChild
+              );
+            }
+
             break;
           }
 
@@ -1069,6 +1078,7 @@ async function chatGonder() {
             cevap.textContent +=
               obj.t;
 
+            // Akıllı scroll: sadece kullanıcı en alttaysa otomatik kaydır
             const _kutu = document.getElementById("chat-messages");
             if (_kutu) {
               const _enAltMi =
@@ -1080,7 +1090,7 @@ async function chatGonder() {
           }
 
         } catch (e) {
-          /* Bozuk paket atlanır */
+          /* Bozuk SSE paketi atlanır. */
         }
       }
     }
@@ -1155,20 +1165,10 @@ async function modelleriYukle() {
 
   if (!sel) return;
 
-  sel.innerHTML = "";
-
-  const otomatikOpt = document.createElement("option");
-  otomatikOpt.value = "otomatik";
-  otomatikOpt.textContent = "🤖 Otomatik (Akıllı Seçim)";
-  sel.appendChild(otomatikOpt);
-
   const modeller = [
-    "deepseek-r1-64k",
-    "qwen2.5-coder:14b",
-    "deepseek-r1:7b",
     "qwen2.5:7b",
-    "llama3.1:latest",
-    "ministral-3:14b"
+    "deepseek-r1:7b",
+    "llama3.1:latest"
   ];
 
   for (const m of modeller) {
@@ -1457,6 +1457,9 @@ document.addEventListener(
     ollamaDurumGuncelle();
     excelBildirimGoster();
     linkedinUrlIzle();
+    excelBildirimGoster();
+    excelBildirimGoster();
+    excelBildirimGoster();
 
     setInterval(
       ollamaDurumGuncelle,
@@ -1730,6 +1733,7 @@ async function aiOneriHazirla() {
       return;
     }
 
+    // "**Başlık**" satırlarını alt başlık, geri kalanı paragraf olarak render et
     const satirlar = d.ozet.split("\n").filter(s => s.trim() !== "");
     let html = "";
     for (const satir of satirlar) {
@@ -1778,6 +1782,8 @@ function adayAra() {
             satir.style.display = "none";
         }
     });
+
+    console.log(`Arama: "${arama}" -> ${gorunen}/${satirlar.length} aday`);
 }
 
 // ============================================================
@@ -1792,12 +1798,14 @@ function sirala(kolon) {
     const satirlar = Array.from(tbody.querySelectorAll("tr"));
     if (satirlar.length === 0) return;
     
+    // Yon belirleme: ayni kolona tiklandiysa ters cevir
     let yon = "asc";
     if (_siralaDurum.kolon === kolon) {
         yon = _siralaDurum.yon === "asc" ? "desc" : "asc";
     }
     _siralaDurum = { kolon, yon };
     
+    // Kolon index'ini bul
     const ths = document.querySelectorAll("#aday-tablo thead th");
     let idx = -1;
     ths.forEach((th, i) => {
@@ -1805,7 +1813,7 @@ function sirala(kolon) {
             if (idx === -1) idx = i;
         }
     });
-    
+    // Fallback: kolon adlarini elle esle
     const kolonMap = {
         "id": 0, "isim": 1, "tarih": 2, "aciklama": 3,
         "davet": 4, "randevu": 5, "plan": 6, "kayit": 7,
@@ -1814,6 +1822,7 @@ function sirala(kolon) {
     if (kolonMap[kolon] !== undefined) idx = kolonMap[kolon];
     if (idx === -1) return;
     
+    // Tarih parse (gg aa yy)
     function _tarihParse(s) {
         s = (s || "").trim();
         const m = s.match(/^(\d{1,2})\s+(\d{1,2})\s+(\d{2,4})$/);
@@ -1825,6 +1834,7 @@ function sirala(kolon) {
         return new Date(yil, ay - 1, gun).getTime();
     }
     
+    // Turkce karakter normalize
     function _norm(s) {
         return (s || "").toString().toLowerCase()
             .replace(/\u0130/g, "i")
@@ -1836,6 +1846,7 @@ function sirala(kolon) {
             .replace(/\u00f6/g, "o");
     }
     
+    // Sirala
     satirlar.sort((a, b) => {
         const aCell = a.children[idx];
         const bCell = b.children[idx];
@@ -1864,12 +1875,16 @@ function sirala(kolon) {
         return 0;
     });
     
+    // Yeniden yerlestir
     satirlar.forEach(tr => tbody.appendChild(tr));
     
+        // Ok isaretlerini guncelle
     ths.forEach((th, i) => {
+        // Once eski oklari ve '?' karakterlerini temizle
         th.textContent = th.textContent
             .replace(/\s*[\^v?]+$/, "")
             .trim();
+        // Sadece aktif kolona ok ekle
         if (i === idx) {
             th.textContent += yon === "asc" ? " ^" : " v";
         }
@@ -1877,17 +1892,22 @@ function sirala(kolon) {
 }
 
 
+
+// ═══════════════════════════════════════════════════════════
+// AÇILIŞ BİLDİRİMİ — Excel tarama sonucu
+// ═══════════════════════════════════════════════════════════
 async function excelBildirimGoster() {
   try {
     const r = await fetch("/api/excel/durum");
     if (!r.ok) return;
     const d = await r.json();
 
-    if (!d.zaman) return;
+    if (!d.zaman) return;  // Hiç tarama yapılmamış
 
     const main = document.querySelector("main");
     if (!main) return;
 
+    // Aynı anda birden fazla bildirim olmasın
     const eski = document.querySelector(".excel-bildirim");
     if (eski) eski.remove();
 
@@ -1911,6 +1931,7 @@ async function excelBildirimGoster() {
 
     main.insertBefore(b, main.firstChild);
 
+    // 10 saniye sonra otomatik kaybol
     setTimeout(() => {
       if (b.parentElement) {
         b.style.opacity = "0";
@@ -1924,6 +1945,10 @@ async function excelBildirimGoster() {
 }
 
 
+
+// ═══════════════════════════════════════════════════════════
+// ADAY SİL — Onaylı silme
+// ═══════════════════════════════════════════════════════════
 async function adaySilOnay(id, isim) {
   const emin = confirm(
     `"${isim}" adlı adayı silmek istediğinizden emin misiniz?\n\n` +
@@ -1940,6 +1965,7 @@ async function adaySilOnay(id, isim) {
     const d = await r.json();
 
     if (d.ok) {
+      // Tablodan satırı kaldır (animasyonlu)
       const satirlar = document.querySelectorAll("#aday-tablo tbody tr");
       for (const tr of satirlar) {
         const idCell = tr.querySelector("td");
@@ -1951,16 +1977,23 @@ async function adaySilOnay(id, isim) {
           break;
         }
       }
+      console.log(`✅ Aday silindi: ${isim} (ID: ${id})`);
     } else {
       alert("❌ Silme başarısız!");
     }
   } catch (e) {
     console.error("Silme hatası:", e);
+    alert(`❌ Silme hatası: ${e}`);
   }
 }
 
 
+
+// ═══════════════════════════════════════════════════════════
+// YAZDIRMA MODU
+// ═══════════════════════════════════════════════════════════
 function yazdirmaModu() {
+  // Tarih damgasını ayarla
   const tarihEl = document.getElementById("print-tarih");
   if (tarihEl) {
     const simdi = new Date();
@@ -1974,19 +2007,23 @@ function yazdirmaModu() {
     tarihEl.textContent = "Yazdırma tarihi: " + formatli;
   }
 
+  // Sayfa başlığını geçici değiştir (PDF dosya adı için)
   const eskiBaslik = document.title;
   const simdi = new Date();
   const tarihKisa = simdi.toLocaleDateString("tr-TR").replace(/\./g, "-");
   document.title = `LinkedIn_Aday_Listesi_${tarihKisa}`;
 
+  // Yazdır
   window.print();
 
+  // Başlığı geri al
   setTimeout(() => {
     document.title = eskiBaslik;
   }, 1500);
 }
 
 
+// Ctrl+P kısayolu (opsiyonel)
 document.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === "p") {
     e.preventDefault();
@@ -1995,6 +2032,10 @@ document.addEventListener("keydown", (e) => {
 });
 
 
+
+// ═══════════════════════════════════════════════════════════
+// KEEP'TEN AKTAR
+// ═══════════════════════════════════════════════════════════
 function keepModalAc() {
   const modal = document.getElementById("keep-modal");
   if (modal) {
@@ -2034,6 +2075,7 @@ async function keepOnizle() {
       return;
     }
 
+    // Önizleme göster
     const kutu = document.getElementById("keep-onizleme-icerik");
     kutu.innerHTML = `
       <div style="margin-bottom:8px;">
@@ -2046,7 +2088,8 @@ async function keepOnizle() {
       <div style="max-height:200px;overflow-y:auto;font-size:13px;line-height:1.6;">
         ${d.adaylar.map(a => `
           <div style="padding:4px 0;border-bottom:1px solid #21262d;">
-            <strong>${a.isim}</strong>${a.durum === 'yeşil' ? '🟢' : a.durum === 'sarı' ? '🟡' : ''}
+            <strong>${a.isim}</strong>
+            ${a.durum === 'yeşil' ? '🟢' : a.durum === 'sarı' ? '🟡' : ''}
             <span style="color:#8b949e;"> — ${a.aciklama}</span>
           </div>
         `).join("")}
@@ -2086,6 +2129,7 @@ async function keepAktar() {
     alert("✅ " + d.mesaj);
     keepModalKapat();
 
+    // Tabloyu yenile
     if (typeof adaylariYukle === "function") adaylariYukle();
 
   } catch (e) {
@@ -2097,6 +2141,10 @@ async function keepAktar() {
 }
 
 
+
+// ═══════════════════════════════════════════════════════════
+// LINKEDIN LİNKİ GÖSTER
+// ═══════════════════════════════════════════════════════════
 function linkedinLinkGuncelle(url) {
   const input = document.getElementById("kart-linkedin-input");
   const link = document.getElementById("kart-linkedin-link");
@@ -2119,26 +2167,86 @@ function linkedinLinkGuncelle(url) {
 }
 
 
+async function linkedinUrlKaydet() {
+  if (!aktifAdayId) {
+    alert("Aktif aday yok.");
+    return;
+  }
+
+  const input = document.getElementById("kart-linkedin-input");
+  const url = (input?.value || "").trim();
+
+  if (!url) {
+    alert("LinkedIn URL bos olamaz.");
+    return;
+  }
+
+  if (!url.toLowerCase().includes("linkedin.com")) {
+    if (!confirm("Bu URL LinkedIn adresi gibi gorunmuyor. Yine de kaydetmek istiyor musunuz?")) {
+      return;
+    }
+  }
+
+  try {
+    const r = await fetch(`/api/candidates/${aktifAdayId}/linkedin`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ linkedin_url: url })
+    });
+
+    const d = await r.json();
+
+    if (!d.ok) {
+      alert("Hata: " + (d.error || "Kayit basarisiz."));
+      return;
+    }
+
+    linkedinLinkGuncelle(url);
+
+    if (typeof adaylariYukle === "function") {
+      adaylariYukle();
+    }
+
+    alert("LinkedIn URL kaydedildi.");
+
+  } catch (e) {
+    alert("Hata: " + e);
+  }
+}
+
+
+
+// ═══════════════════════════════════════════════════════════
+// LINKEDIN URL'DEN ISIM CIKARMA
+// ═══════════════════════════════════════════════════════════
 function isimUrlCikar(url) {
   if (!url) return "";
 
+  // linkedin.com/in/kullanici-adi formati
   const match = url.match(/linkedin\.com\/in\/([^\/\?#]+)/i);
   if (!match) return "";
 
-  let isim = match[1].replace(/-/g, " ");
+  let slug = match[1];
+  try { slug = decodeURIComponent(slug); } catch (e) {}
 
-  try { isim = decodeURIComponent(isim); } catch (e) {}
+  let parcalar = slug.split("-").filter(w => w.trim().length > 0);
 
-  isim = isim
-    .split(" ")
-    .filter(w => w.length > 0)
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(" ");
+  // Sonda LinkedIn'in atadığı rastgele harf/rakam ID'si varsa (örn: b30878158) onu sil
+  if (parcalar.length > 0 && /^[a-z0-9]+$/i.test(parcalar[parcalar.length - 1]) && /\d/.test(parcalar[parcalar.length - 1])) {
+      parcalar.pop();
+  }
+
+  // Sadece ilk 3 kelimeyi gerçek isim olarak kabul et (uzun unvanları buda)
+  let isim = parcalar.slice(0, 3).join(" ");
+
+  // Her kelimenin ilk harfini büyüt
+  isim = isim.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
 
   return isim;
 }
 
 
+// URL input'unu izle ve isim otomatik doldur
 function linkedinUrlIzle() {
   const urlInput = document.getElementById("linkedin-url");
   const isimInput = document.getElementById("isim");
@@ -2167,6 +2275,10 @@ function linkedinUrlIzle() {
 }
 
 
+
+// ═══════════════════════════════════════════════════════════
+// AI DURUM RENKLERİ
+// ═══════════════════════════════════════════════════════════
 function durumTopp(durum) {
   if (!durum) return "🆕";
   const d = String(durum).trim();
@@ -2187,10 +2299,15 @@ function durumEtiketi(durum) {
 }
 
 
+
+// ═══════════════════════════════════════════════════════════
+// ACIKLAMA TEMIZLE — Basindaki statu emoji'sini sil
+// ═══════════════════════════════════════════════════════════
 function aciklamaTemizle(metin) {
   if (!metin) return "";
   let s = String(metin).trim();
 
+  // Bastaki tum statu emoji'lerini sil (birkac kez)
   const emojiler = /^(🆕|⚪|🟢|🟡|🔴|🔥|❄️|❄|⚫|🟠|🟨|🟩|🟥|🟧)\s*/u;
 
   let onceki = "";
@@ -2204,6 +2321,9 @@ function aciklamaTemizle(metin) {
   return s;
 }
 
+/* ============================================================
+   OTOMATİK STATÜ BELİRLEYİCİ (KURAL MOTORU)
+   ============================================================ */
 function otomatikStatuBelirle() {
   const olayTipi = document.getElementById("gelisme-tip").value;
   const durumSecici = document.getElementById("gelisme-durum");

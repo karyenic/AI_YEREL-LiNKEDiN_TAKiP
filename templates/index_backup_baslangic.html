@@ -23,14 +23,14 @@
   </div>
 
   <div class="checks-row">
-    <div class="checks" style="align-items: center;">
-      <label style="margin-right: 8px; color: #8b949e; font-weight: 600;">Başlangıç Statüsü:</label>
-      <select id="yeni-aday-durum" style="padding: 8px 12px; background: #161b22; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; font-size: 15px;">
-        <option value="🆕 Yeni">🆕 Yeni</option>
-        <option value="⚪ Değerlendirilecek">⚪ Değerlendirilecek</option>
-        <option value="🟢 Aktif">🟢 Aktif</option>
-        <option value="🔥 Sıcak">🔥 Sıcak</option>
-      </select>
+    <div class="checks">
+      <label><input type="checkbox" id="davet"> Davet</label>
+      <label><input type="checkbox" id="randevu"> Randevu</label>
+      <label><input type="checkbox" id="plan"> Plan</label>
+      <label><input type="checkbox" id="kayit"> Kayıt</label>
+      <label><input type="checkbox" id="takip"> Takip</label>
+      <label><input type="checkbox" id="hayir"> Hayır</label>
+      <label><input type="checkbox" id="is_ariyor"> İş Arıyor</label>
     </div>
 
     <button onclick="adayEkle()" class="btn-ekle" type="button">✅ Ekle</button>

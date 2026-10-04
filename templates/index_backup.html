@@ -23,14 +23,14 @@
   </div>
 
   <div class="checks-row">
-    <div class="checks" style="align-items: center;">
-      <label style="margin-right: 8px; color: #8b949e; font-weight: 600;">Başlangıç Statüsü:</label>
-      <select id="yeni-aday-durum" style="padding: 8px 12px; background: #161b22; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; font-size: 15px;">
-        <option value="🆕 Yeni">🆕 Yeni</option>
-        <option value="⚪ Değerlendirilecek">⚪ Değerlendirilecek</option>
-        <option value="🟢 Aktif">🟢 Aktif</option>
-        <option value="🔥 Sıcak">🔥 Sıcak</option>
-      </select>
+    <div class="checks">
+      <label><input type="checkbox" id="davet"> Davet</label>
+      <label><input type="checkbox" id="randevu"> Randevu</label>
+      <label><input type="checkbox" id="plan"> Plan</label>
+      <label><input type="checkbox" id="kayit"> Kayıt</label>
+      <label><input type="checkbox" id="takip"> Takip</label>
+      <label><input type="checkbox" id="hayir"> Hayır</label>
+      <label><input type="checkbox" id="is_ariyor"> İş Arıyor</label>
     </div>
 
     <button onclick="adayEkle()" class="btn-ekle" type="button">✅ Ekle</button>
@@ -235,14 +235,19 @@
         <div>
           <label>Olay Tipi</label>
 
-          <select id="gelisme-tip" onchange="otomatikStatuBelirle()">
-            <option value="Not">📝 Not / Mesaj</option>
-            <option value="Davet">📞 Davet Yapıldı</option>
-            <option value="Plan">📅 Plan (Sunum) Yapıldı</option>
-            <option value="Takip Görüşmesi">🤝 Takip Görüşmesi</option>
-            <option value="Kayıt">✅ Kayıt İşlemi</option>
-            <option value="Hayır">🔴 Hayır / İlgilenmiyor</option>
-            <option value="Durum Değişikliği">🔄 Sadece Durum Değiştir</option>
+          <select id="gelisme-tip">
+
+            <option value="Not">📝 Not</option>
+            <option value="Telefon">📞 Telefon</option>
+            <option value="Görüşme">🤝 Görüşme</option>
+            <option value="Mesaj">💬 Mesaj</option>
+            <option value="Randevu">📅 Randevu</option>
+            <option value="Takip">🔔 Takip</option>
+            <option value="Teklif">📄 Teklif</option>
+            <option value="Durum Değişikliği">🔄 Durum Değişikliği</option>
+            <option value="Olumsuz">🔴 Olumsuz</option>
+            <option value="Diğer">📌 Diğer</option>
+
           </select>
         </div>
 
@@ -250,14 +255,17 @@
           <label>Durum</label>
 
           <select id="gelisme-durum">
+
             <option value="">Durumu değiştirme</option>
             <option value="🆕 Yeni">🆕 Yeni</option>
             <option value="⚪ Değerlendirilecek">⚪ Değerlendirilecek</option>
             <option value="🟢 Aktif">🟢 Aktif</option>
             <option value="🔥 Sıcak">🔥 Sıcak</option>
-            <option value="🔔 Takip">🔔 Takip</option>
-            <option value="🚀 Kayıt Sonrası Başlatma">🚀 Kayıt Sonrası Başlatma</option>
+            <option value="🟡 Bekliyor">🟡 Bekliyor</option>
             <option value="❄️ DeepFreeze">❄️ DeepFreeze</option>
+            <option value="🔴 Olumsuz">🔴 Olumsuz</option>
+            <option value="⚫ Arşiv">⚫ Arşiv</option>
+
           </select>
         </div>
 
