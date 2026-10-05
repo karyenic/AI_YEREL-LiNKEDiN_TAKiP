@@ -65,7 +65,7 @@
 
             <thead>
         <tr>
-          <th onclick="sirala('id')" style="cursor:pointer;" title="Sırala">ID</th>
+          <th onclick="sirala('id')" style="cursor:pointer;" title="Sırala">No</th>
           <th onclick="sirala('isim')" style="cursor:pointer;" title="Sırala">İsim</th>
           <th onclick="sirala('tarih')" style="cursor:pointer;" title="Sırala">Tarih</th>
           <th onclick="sirala('aciklama')" style="cursor:pointer;" title="Sırala">Açıklama</th>
@@ -203,131 +203,112 @@
 
 
     <!-- ==================================================
-         GELİŞME FORMU
-         ================================================== -->
+     GELİŞME FORMU
+     ================================================== -->
 
-    <div
-      id="gelisme-formu"
-      class="gelisme-form hidden"
+<div
+  id="gelisme-formu"
+  class="gelisme-form hidden"
+>
+
+  <div class="gelisme-form-header">
+    <h3>Yeni Gelişme</h3>
+
+    <button
+      class="mini-close"
+      onclick="gelismeFormuKapat()"
     >
+      ✕
+    </button>
+  </div>
 
-      <div class="gelisme-form-header">
-        <h3>Yeni Gelişme</h3>
+  <div class="gelisme-form-grid">
 
-        <button
-          class="mini-close"
-          onclick="gelismeFormuKapat()"
-        >
-          ✕
-        </button>
-      </div>
+    <!-- Satır 1: Tarih | Olay Tipi | Durum -->
+    <div>
+      <label>Tarih</label>
+      <input id="gelisme-tarih" type="date">
+    </div>
 
-      <div class="gelisme-form-grid">
+    <div>
+      <label>Olay Tipi</label>
+      <select id="gelisme-tip" onchange="otomatikStatuBelirle()">
+        <option value="Not">📝 Not / Mesaj</option>
+        <option value="Davet">📞 Davet Yapıldı</option>
+        <option value="Plan">📅 Plan (Sunum) Yapıldı</option>
+        <option value="Takip Görüşmesi">🤝 Takip Görüşmesi</option>
+        <option value="Kayıt">✅ Kayıt İşlemi</option>
+        <option value="Hayır">🔴 Hayır / İlgilenmiyor</option>
+        <option value="Durum Değişikliği">🔄 Sadece Durum Değiştir</option>
+      </select>
+    </div>
 
-        <div>
-          <label>Tarih</label>
-          <input
-            id="gelisme-tarih"
-            type="date"
-          >
-          <div>
-          <label>Randevu Tarihi</label>
-          <input id="gelisme-randevu-tarihi" type="date" placeholder="gg.aa.yyyy">
-        </div>
-        <div>
-          <label>Randevu Saati</label>
-          <input id="gelisme-randevu-saati" type="time">
-        </div>
-      </div>
+    <div>
+      <label>Durum</label>
+      <select id="gelisme-durum">
+        <option value="">Durumu değiştirme</option>
+        <option value="🆕 Yeni">🆕 Yeni</option>
+        <option value="⚪ Değerlendirilecek">⚪ Değerlendirilecek</option>
+        <option value="🟢 Aktif">🟢 Aktif</option>
+        <option value="🔥 Sıcak">🔥 Sıcak</option>
+        <option value="🔔 Takip">🔔 Takip</option>
+        <option value="🎓 SG">🎓 SG</option>
+        <option value="❄️ DeepFreeze">❄️ DeepFreeze</option>
+        <option value="🔴 Olumsuz">🔴 Olumsuz</option>
+      </select>
+    </div>
 
-        <div>
-          <label>Olay Tipi</label>
+    <!-- Satır 2: Randevu Tarihi | Randevu Saati | boş -->
+    <div>
+      <label>Randevu Tarihi</label>
+      <input
+        id="gelisme-randevu-tarihi"
+        type="date"
+        placeholder="gg.aa.yyyy"
+      >
+    </div>
 
-          <select id="gelisme-tip" onchange="otomatikStatuBelirle()">
-            <option value="Not">📝 Not / Mesaj</option>
-            <option value="Davet">📞 Davet Yapıldı</option>
-            <option value="Plan">📅 Plan (Sunum) Yapıldı</option>
-            <option value="Takip Görüşmesi">🤝 Takip Görüşmesi</option>
-            <option value="Kayıt">✅ Kayıt İşlemi</option>
-            <option value="Hayır">🔴 Hayır / İlgilenmiyor</option>
-            <option value="Durum Değişikliği">🔄 Sadece Durum Değiştir</option>
-          </select>
-          <div>
-          <label>Randevu Tarihi</label>
-          <input id="gelisme-randevu-tarihi" type="date" placeholder="gg.aa.yyyy">
-        </div>
-        <div>
-          <label>Randevu Saati</label>
-          <input id="gelisme-randevu-saati" type="time">
-        </div>
-      </div>
+    <div>
+      <label>Randevu Saati</label>
+      <input id="gelisme-randevu-saati" type="time">
+    </div>
 
-        <div>
-          <label>Durum</label>
+    <div></div>
 
-          <select id="gelisme-durum">
-    <option value="">Durumu değiştirme</option>
-    <option value="🆕 Yeni">🆕 Yeni</option>
-    <option value="⚪ Değerlendirilecek">⚪ Değerlendirilecek</option>
-    <option value="🟢 Aktif">🟢 Aktif</option>
-    <option value="🔥 Sıcak">🔥 Sıcak</option>
-    <option value="🔔 Takip">🔔 Takip</option>
-    <option value="🎓 SG">🎓 SG</option>
-    <option value="❄️ DeepFreeze">❄️ DeepFreeze</option>
-    <option value="🔴 Olumsuz">🔴 Olumsuz</option>
-  </select>
-          <div>
-          <label>Randevu Tarihi</label>
-          <input id="gelisme-randevu-tarihi" type="date" placeholder="gg.aa.yyyy">
-        </div>
-        <div>
-          <label>Randevu Saati</label>
-          <input id="gelisme-randevu-saati" type="time">
-        </div>
-      </div>
+  </div>
 
-        <div>
-          <label>Randevu Tarihi</label>
-          <input id="gelisme-randevu-tarihi" type="date" placeholder="gg.aa.yyyy">
-        </div>
-        <div>
-          <label>Randevu Saati</label>
-          <input id="gelisme-randevu-saati" type="time">
-        </div>
-      </div>
+  <label>Gelişme / Açıklama</label>
 
+  <textarea
+    id="gelisme-aciklama"
+    rows="5"
+    placeholder="Bugün adayla ne konuşuldu? Ne oldu? Bir sonraki adım nedir?"
+  ></textarea>
 
-      <label>Gelişme / Açıklama</label>
+  <div class="gelisme-form-actions">
 
-      <textarea
-        id="gelisme-aciklama"
-        rows="5"
-        placeholder="Bugün adayla ne konuşuldu? Ne oldu? Bir sonraki adım nedir?"
-      ></textarea>
+    <button
+      class="btn-green"
+      onclick="gelismeKaydet()"
+    >
+      💾 Gelişmeyi Kaydet
+    </button>
 
+    <button
+      class="btn-secondary"
+      onclick="gelismeFormuKapat()"
+    >
+      Vazgeç
+    </button>
 
-      <div class="gelisme-form-actions">
+  </div>
 
-        <button
-          class="btn-green"
-          onclick="gelismeKaydet()"
-        >
-          💾 Gelişmeyi Kaydet
-        </button>
+  <div
+    id="gelisme-mesaj"
+    class="form-message"
+  ></div>
 
-        <button
-          class="btn-secondary"
-          onclick="gelismeFormuKapat()"
-        >
-          Vazgeç
-        </button>
-
-      </div>
-
-      <div
-        id="gelisme-mesaj"
-        class="form-message"
-      ></div>
+</div>
 
     </div>
 

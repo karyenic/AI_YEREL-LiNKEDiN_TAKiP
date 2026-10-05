@@ -1,4 +1,6 @@
-﻿from flask import Blueprint, jsonify, request
+﻿import sqlite3
+from flask import Blueprint, jsonify, request
+from config import ADAY_DB
 
 from core.database import (
     aday_durum_otomatik_guncelle,
@@ -26,6 +28,7 @@ def listele():
 @bp.route("", methods=["POST"])
 def ekle():
     d = request.get_json() or {}
+    print(f"[DEBUG ekle route] Gelen veri: {d}", flush=True)
 
     ok = aday_ekle(
         d.get("isim", ""),
@@ -38,11 +41,11 @@ def ekle():
         d.get("takip", 0),
         d.get("hayir", 0),
         d.get("is_ariyor", 0),
-        linkedin_url=d.get("linkedin_url", None)
+        linkedin_url=d.get("linkedin_url", None),
+        durum=d.get("durum", "")
     )
 
     return jsonify({"ok": ok})
-
 
 @bp.route("/<int:aday_id>", methods=["GET"])
 def kart(aday_id):
@@ -92,9 +95,6 @@ def gelisme_ekle(aday_id):
     olay_metni = str(d.get("olay_metni", "")).strip()
     durum = str(d.get("durum", "")).strip()
     
-    # YENI: Randevu tarihi/saati
-    randevu_tarihi = str(d.get("randevu_tarihi", "")).strip()
-    randevu_saati = str(d.get("randevu_saati", "")).strip()
     
     # YENI: Randevu tarihi/saati
     randevu_tarihi = str(d.get("randevu_tarihi", "")).strip()
@@ -111,9 +111,7 @@ def gelisme_ekle(aday_id):
     # ═══════════════════════════════════════════════════════════
     # OLAY TIPINDEN CHECKBOX CIKARIMI
     # ═══════════════════════════════════════════════════════════
-    import sqlite3
-    from config import ADAY_DB
-    
+        
     davet = 0
     plan = 0
     kayit = 0
@@ -122,6 +120,9 @@ def gelisme_ekle(aday_id):
     randevu = 0
     
     tip = olay_tipi.lower()
+    # RANDEVU TARIHI/SAATI DOLUYSA randevu=1
+    if randevu_tarihi or randevu_saati:
+        randevu = 1
     metin = olay_metni.lower()
     
     # OLAY TIPINDEN (birincil)
@@ -164,6 +165,7 @@ def gelisme_ekle(aday_id):
         c = conn.cursor()
         
         updates = []
+        params = []
         if davet == 1:
             updates.append("davet = 1")
         if plan == 1:
@@ -177,13 +179,16 @@ def gelisme_ekle(aday_id):
         if randevu == 1:
             updates.append("randevu = 1")
         if randevu_tarihi:
-            updates.append(f"randevu_tarihi = '{randevu_tarihi}'")
+            updates.append("randevu_tarihi = ?")
+            params.append(randevu_tarihi)
         if randevu_saati:
-            updates.append(f"randevu_saati = '{randevu_saati}'")
+            updates.append("randevu_saati = ?")
+            params.append(randevu_saati)
         
         if updates:
             sql = f"UPDATE adaylar SET {', '.join(updates)} WHERE id = ?"
-            c.execute(sql, (aday_id,))
+            params.append(aday_id)
+            c.execute(sql, tuple(params))
             conn.commit()
             print(f"[SYNC] Aday {aday_id} -> {updates}")
         else:

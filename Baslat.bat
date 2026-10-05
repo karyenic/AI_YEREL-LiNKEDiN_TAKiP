@@ -11,47 +11,41 @@ set OLLAMA_EXE=C:\AI_IPEX\Ollama\portable\ollama.exe
 
 if not exist "%OLLAMA_EXE%" (
     echo [UYARI] IPEX Ollama bulunamadi: %OLLAMA_EXE%
-    echo         Standart Ollama ile devam edilecek.
+    echo         Standart Ollama ile devam edilecek, Intel Arc hizlandirmasi CALISMAYACAK.
     set OLLAMA_EXE=ollama
 )
 
 REM ============================================================
-REM  KALICI ENV VAR (setx) - bir kere yapilir, tum pencerelerde gecerli
+REM  IPEX-LLM RESMI DOKUMANINDAKI TUM GEREKLI AYARLAR
+REM  Kaynak: ipex-llm.readthedocs.io Ollama Quickstart
 REM ============================================================
-echo [0/5] Kalici IPEX ortam degiskenleri ayarlaniyor...
-setx OLLAMA_NUM_GPU "999" >nul 2>&1
-setx ONEAPI_DEVICE_SELECTOR "level_zero:0" >nul 2>&1
-setx ZES_ENABLE_SYSMAN "1" >nul 2>&1
-setx SYCL_CACHE_PERSISTENT "1" >nul 2>&1
-setx no_proxy "localhost,127.0.0.1" >nul 2>&1
-setx NO_PROXY "localhost,127.0.0.1" >nul 2>&1
-setx OLLAMA_HOST "127.0.0.1:11434" >nul 2>&1
-setx OLLAMA_NUM_PARALLEL "1" >nul 2>&1
-setx OLLAMA_KEEP_ALIVE "24h" >nul 2>&1
-setx OLLAMA_FLASH_ATTENTION "false" >nul 2>&1
 
-REM ============================================================
-REM  ANLIK ENV VAR (set) - bu pencere icin
-REM ============================================================
+REM 1. EN ONEMLI: Tum katmanlari GPU'ya yukle (yoksa bazi katmanlar CPU'da kalir)
 set OLLAMA_NUM_GPU=999
+
+REM 2. IPEX'in hangi GPU'yu kullanacagi (0=iGPU, 1=dGPU/Arc)
+REM    Eger sistemde sadece 1 GPU varsa 0 yapin
 set ONEAPI_DEVICE_SELECTOR=level_zero:0
+
+REM 3. IPEX LLM icin zorunlu sistem ayarlari
 set ZES_ENABLE_SYSMAN=1
 set SYCL_CACHE_PERSISTENT=1
+
+
+REM 5. Proxy'yi devre disi birak (localhost baglantilari icin)
 set no_proxy=localhost,127.0.0.1
 set NO_PROXY=localhost,127.0.0.1
+
+REM 6. Ollama sunucu ayarlari
 set OLLAMA_HOST=127.0.0.1:11434
 set OLLAMA_NUM_PARALLEL=1
-set OLLAMA_KEEP_ALIVE=24h
+set OLLAMA_KEEP_ALIVE=30m
 set OLLAMA_FLASH_ATTENTION=false
 
-echo.
-echo       === ENV VAR KONTROL (bu pencere) ===
-echo       OLLAMA_NUM_GPU          = %OLLAMA_NUM_GPU%
-echo       OLLAMA_KEEP_ALIVE       = %OLLAMA_KEEP_ALIVE%
-echo       ONEAPI_DEVICE_SELECTOR  = %ONEAPI_DEVICE_SELECTOR%
-echo       OLLAMA_HOST             = %OLLAMA_HOST%
-echo       =====================================
-echo.
+echo [0/4] IPEX ortam degiskenleri ayarlandi:
+echo        OLLAMA_NUM_GPU = %OLLAMA_NUM_GPU%  (tum katmanlar GPU'da)
+echo        ONEAPI_DEVICE_SELECTOR = %ONEAPI_DEVICE_SELECTOR%
+echo        Kullanilan Ollama: %OLLAMA_EXE%
 
 taskkill /f /im ollama.exe >nul 2>&1
 taskkill /f /im ollama-lib.exe >nul 2>&1
@@ -59,9 +53,7 @@ taskkill /f /im "ollama app.exe" >nul 2>&1
 timeout /t 2 /nobreak >nul
 
 echo [1/4] Ollama (IPEX) baslatiliyor...
-
-REM KRITIK: Env var'lari ollama serve komutunun hemen oncesine koy
-start "Ollama-IPEX" /min cmd /c "set OLLAMA_NUM_GPU=999 && set ONEAPI_DEVICE_SELECTOR=level_zero:0 && set ZES_ENABLE_SYSMAN=1 && set SYCL_CACHE_PERSISTENT=1 && set OLLAMA_KEEP_ALIVE=24h && set OLLAMA_NUM_PARALLEL=1 && set OLLAMA_FLASH_ATTENTION=false && "%OLLAMA_EXE%" serve"
+start "Ollama-IPEX" /min cmd /c ""%OLLAMA_EXE%" serve"
 
 echo [2/4] Ollama portu bekleniyor (max 45 sn)...
 set /a n=0

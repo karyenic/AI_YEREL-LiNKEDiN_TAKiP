@@ -45,8 +45,17 @@ def _profil_id_eski_aday(aday_id):
         return None
 
 def _conn(db_path):
-    conn = sqlite3.connect(str(db_path), check_same_thread=False)
+    conn = sqlite3.connect(
+        str(db_path),
+        check_same_thread=False,
+        timeout=10
+    )
     conn.row_factory = sqlite3.Row
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA foreign_keys=ON")
+    except Exception:
+        pass
     return conn
 
 
@@ -170,10 +179,10 @@ def init_all():
                 cur = c.execute(
                     '''
                     INSERT INTO aday_profil
-                    (isim, telefon, email, adres, aktif, created_at, updated_at)
-                    VALUES (?, '', '', '', 1, ?, ?)
+                    (isim, telefon, email, adres, durum, aktif, created_at, updated_at)
+                    VALUES (?, '', '', '', ?, 1, ?, ?)
                     ''',
-                    (isim, now, now)
+                    (isim.strip(), durum or "🆕 Yeni", now, now)
                 )
                 profil_id = cur.lastrowid
             else:
@@ -311,13 +320,13 @@ def adaylari_getir():
                         "SELECT durum FROM aday_profil WHERE LOWER(TRIM(isim))=LOWER(TRIM(?)) LIMIT 1",
                         (isim,)
                     ).fetchone()
+                    
                     if profil and profil["durum"]:
                         durum = profil["durum"]
                     else:
                         durum = "Yeni"
             except Exception:
                 durum = "Yeni"
-
             d["durum"] = durum
             sonuc.append(d)
 
@@ -335,10 +344,13 @@ def aday_ekle(
     hayir,
     is_ariyor,
     kaynak_hash=None,
-    linkedin_url=None
+    linkedin_url=None,
+    durum=""
 ):
     try:
         with _conn(ADAY_DB) as c:
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
             c.execute(
                 '''
                 INSERT INTO adaylar
@@ -378,8 +390,6 @@ def aday_ekle(
                 "SELECT last_insert_rowid() AS id"
             ).fetchone()["id"]
 
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
             profil = c.execute(
                 '''
                 SELECT id
@@ -395,10 +405,10 @@ def aday_ekle(
                 cur = c.execute(
                     '''
                     INSERT INTO aday_profil
-                    (isim, telefon, email, adres, aktif, created_at, updated_at)
-                    VALUES (?, '', '', '', 1, ?, ?)
+                    (isim, telefon, email, adres, durum, aktif, created_at, updated_at)
+                    VALUES (?, '', '', '', ?, 1, ?, ?)
                     ''',
-                    (isim.strip(), now, now)
+                    (isim.strip(), durum or "🆕 Yeni", now, now)
                 )
                 profil_id = cur.lastrowid
             else:
@@ -440,7 +450,7 @@ def aday_ekle(
                     int(takip),
                     int(hayir),
                     int(is_ariyor),
-                    "",
+                    durum or "",
                     now
                 )
             )
@@ -454,7 +464,6 @@ def aday_ekle(
     except Exception as e:
         print(f"Aday ekleme hatası: {e}")
         return False
-
 
 def aday_sil(aday_id):
     # Eski davranış korunuyor.
@@ -678,43 +687,6 @@ def aday_gelisme_ekle(
             except Exception as e:
                 print(f"Durum guncelleme hatasi: {e}")
 
-        # Durum verildiyse aday_profil.durum'u da guncelle
-        if durum and str(durum).strip():
-            try:
-                isim_row = c.execute(
-                    "SELECT isim FROM adaylar WHERE id=?",
-                    (eski_aday_id,)
-                ).fetchone()
-
-                if isim_row:
-                    try:
-                        isim = isim_row["isim"] if hasattr(isim_row, "keys") else isim_row[0]
-                    except Exception:
-                        isim = str(isim_row)
-                    isim = (isim or "").strip()
-
-                    if isim:
-                        profil = c.execute(
-                            "SELECT id FROM aday_profil WHERE isim=? LIMIT 1",
-                            (isim,)
-                        ).fetchone()
-
-                        if profil:
-                            try:
-                                pid = profil["id"] if hasattr(profil, "keys") else profil[0]
-                            except Exception:
-                                pid = profil
-                            c.execute(
-                                "UPDATE aday_profil SET durum=?, updated_at=? WHERE id=?",
-                                (durum, now, pid)
-                            )
-                        else:
-                            c.execute(
-                                "INSERT INTO aday_profil (isim, telefon, email, adres, durum, aktif, created_at, updated_at) VALUES (?, '', '', '', ?, 1, ?, ?)",
-                                (isim, durum, now, now)
-                            )
-            except Exception as e:
-                print(f"Durum guncelleme hatasi: {e}")
 
         c.commit()
 
