@@ -28,7 +28,6 @@ def listele():
 @bp.route("", methods=["POST"])
 def ekle():
     d = request.get_json() or {}
-    print(f"[DEBUG ekle route] Gelen veri: {d}", flush=True)
 
     ok = aday_ekle(
         d.get("isim", ""),
@@ -103,7 +102,14 @@ def gelisme_ekle(aday_id):
     if not olay_metni and olay_tipi != "Sadece Durum Değiştir":
         return jsonify({"ok": False, "error": "Gelisme aciklamasi bos."}), 400
     
-    ok, msg = aday_gelisme_ekle(aday_id, tarih, olay_tipi, olay_metni, durum)
+    # Blok çıkarımı: durum "Blok" içeriyorsa blok=1
+    blok_param = 0
+    if durum and ("blok" in durum.lower() or "⛔" in durum):
+        blok_param = 1
+
+    ok, msg = aday_gelisme_ekle(
+        aday_id, tarih, olay_tipi, olay_metni, durum, blok_param
+    )
     
     if not ok:
         return jsonify({"ok": False, "error": msg}), 404
@@ -124,9 +130,10 @@ def gelisme_ekle(aday_id):
     if randevu_tarihi or randevu_saati:
         randevu = 1
     metin = olay_metni.lower()
-    
-    # OLAY TIPINDEN (birincil)
-    if tip == "davet":
+       # OLAY TIPINDEN (birincil)
+    if tip in ("net hayır", "net hayir", "blok"):
+        hayir = 1
+    elif tip == "davet":
         davet = 1
     elif tip == "randevu":
         randevu = 1

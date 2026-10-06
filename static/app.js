@@ -2187,7 +2187,9 @@ function durumTopp(durum) {
   if (d.includes("Takip") || d.includes("🔔")) return "🔔";
   if (d.includes("SG") || d.includes("🎓")) return "🎓";
   if (d.includes("DeepFreeze") || d.includes("❄")) return "❄️";
+  if (d.includes("Blok") || d.includes("⛔")) return "⛔";
   if (d.includes("Olumsuz") || d.includes("🔴")) return "🔴";
+
 
   return "🆕";
 }
@@ -2225,7 +2227,7 @@ function otomatikStatuBelirle() {
     durumSecici.value = "🔔 Takip";
   } 
   else if (olayTipi === "Kayıt") {
-    durumSecici.value = "🚀 Kayıt Sonrası Başlatma";
+    durumSecici.value = "🎓 SG";
   } 
   else if (olayTipi === "Hayır") {
     durumSecici.value = "❄️ DeepFreeze";

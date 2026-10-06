@@ -132,6 +132,9 @@ def init_all():
 
         # Önceden migration yapılmış sistemlerde durum kolonu yoksa ekle.
         _kolon_ekle(c, "aday_olaylari", "durum", "TEXT DEFAULT ''")
+        _kolon_ekle(c, "adaylar", "blok", "INTEGER DEFAULT 0")
+        _kolon_ekle(c, "adaylar", "blok_tarihi", "TEXT")
+        _kolon_ekle(c, "adaylar", "blok_notu", "TEXT")
 
         c.execute('''
             CREATE INDEX IF NOT EXISTS idx_aday_profil_isim
@@ -301,11 +304,17 @@ def init_all():
 # Eski aday sistemi
 # ============================================================
 
-def adaylari_getir():
+def adaylari_getir(bloklular_dahil=False):
     """Tum adaylari son durumlariyla birlikte dondurur.
-    Durum, aday_profil tablosundan okunur (kart ile ayni kaynak)."""
+    Durum, aday_profil tablosundan okunur (kart ile ayni kaynak).
+    bloklular_dahil=False ise blok=1 olanlar haric tutulur."""
     with _conn(ADAY_DB) as c:
-        rows = c.execute("SELECT * FROM adaylar ORDER BY id DESC").fetchall()
+        if bloklular_dahil:
+            rows = c.execute("SELECT * FROM adaylar ORDER BY id DESC").fetchall()
+        else:
+            rows = c.execute(
+                "SELECT * FROM adaylar WHERE COALESCE(blok, 0) = 0 ORDER BY id DESC"
+            ).fetchall()
 
         sonuc = []
         for r in rows:
@@ -327,6 +336,25 @@ def adaylari_getir():
                         durum = "Yeni"
             except Exception:
                 durum = "Yeni"
+
+            # Açıklama: en son gelişme metni (varsa)
+            try:
+                son_olay = c.execute(
+                    """
+                    SELECT olay_metni FROM aday_olaylari
+                    WHERE kaynak_kayit_id = ?
+                      AND olay_metni IS NOT NULL
+                      AND olay_metni != ''
+                    ORDER BY tarih DESC, id DESC
+                    LIMIT 1
+                    """,
+                    (r["id"],)
+                ).fetchone()
+                if son_olay and son_olay["olay_metni"]:
+                    d["aciklama"] = son_olay["olay_metni"]
+            except Exception:
+                pass
+
             d["durum"] = durum
             sonuc.append(d)
 
@@ -350,6 +378,16 @@ def aday_ekle(
     try:
         with _conn(ADAY_DB) as c:
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            # Blok kontrolü: aynı isimde bloklu aday varsa atla
+            if isim and isim.strip():
+                bloklu = c.execute(
+                    "SELECT id FROM adaylar WHERE LOWER(TRIM(isim))=LOWER(TRIM(?)) AND COALESCE(blok,0)=1 LIMIT 1",
+                    (isim.strip(),)
+                ).fetchone()
+                if bloklu:
+                    print(f"[BLOK] '{isim}' bloklu listede, atlandi (id={bloklu['id']})")
+                    return False
 
             c.execute(
                 '''
@@ -606,7 +644,8 @@ def aday_gelisme_ekle(
     tarih,
     olay_tipi,
     olay_metni,
-    durum=""
+    durum="",
+    blok=0
 ):
     with _conn(ADAY_DB) as c:
         profil_id = _profil_id_eski_aday(eski_aday_id)
@@ -687,6 +726,13 @@ def aday_gelisme_ekle(
             except Exception as e:
                 print(f"Durum guncelleme hatasi: {e}")
 
+
+        # Blok işlemi
+        if blok == 1:
+            c.execute(
+                "UPDATE adaylar SET blok=1, blok_tarihi=?, blok_notu=? WHERE id=?",
+                (now, olay_metni or "", eski_aday_id)
+            )
 
         c.commit()
 
