@@ -86,7 +86,7 @@ def excel_ice_aktar(excel_yolu):
         takip_i = _kolon_bul(headers, "takip")
         hayir_i = _kolon_bul(headers, "hayir", "yanit")
         is_ariyor_i = _kolon_bul(headers, "is_ariyor", "is ariyor", "isariyor")
-
+        linkedin_i = _kolon_bul(headers, "linkedin url", "linkedin", "url", "link", "profil")
         if isim_i is None:
             return False, f"Excel'de 'İsim' sütunu bulunamadı. Başlık satırı: {headers}"
 
@@ -122,9 +122,14 @@ def excel_ice_aktar(excel_yolu):
             hayir = _evet_mi(row[hayir_i]) if hayir_i is not None and hayir_i < len(row) else 0
             is_ariyor = _evet_mi(row[is_ariyor_i]) if is_ariyor_i is not None and is_ariyor_i < len(row) else 0
 
+
+            linkedin_url = None
+            if linkedin_i is not None and linkedin_i < len(row) and row[linkedin_i]:
+                linkedin_url = str(row[linkedin_i]).strip() or None
             h = _satir_hash(isim, tarih, aciklama)
             ok = aday_ekle(isim, tarih, aciklama, davet, randevu, plan,
-                           kayit, takip, hayir, is_ariyor, kaynak_hash=h)
+                           kayit, takip, hayir, is_ariyor, kaynak_hash=h,
+                           linkedin_url=linkedin_url)
             if ok:
                 eklenen += 1
             else:

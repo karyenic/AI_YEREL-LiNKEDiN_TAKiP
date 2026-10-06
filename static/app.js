@@ -1920,6 +1920,17 @@ async function excelBildirimGoster() {
   }
 }
 
+function _siraNumaralariniYenile() {
+  const satirlar = document.querySelectorAll("#aday-tablo tbody tr");
+  let no = 0;
+  for (const tr of satirlar) {
+    no++;
+    const ilkHucre = tr.querySelector("td");
+    if (ilkHucre) {
+      ilkHucre.textContent = String(no);
+    }
+  }
+}
 
 async function adaySilOnay(id, isim) {
   const emin = confirm(
@@ -1939,12 +1950,13 @@ async function adaySilOnay(id, isim) {
     if (d.ok) {
       const satirlar = document.querySelectorAll("#aday-tablo tbody tr");
       for (const tr of satirlar) {
-        const idCell = tr.querySelector("td");
-        if (idCell && idCell.textContent.trim() === String(id)) {
+        if (tr.dataset.adayId === String(id)) {
           tr.style.transition = "opacity 0.3s, transform 0.3s";
           tr.style.opacity = "0";
           tr.style.transform = "translateX(-20px)";
-          setTimeout(() => tr.remove(), 300);
+          setTimeout(() => {
+            adaylariYukle();
+          }, 300);;
           break;
         }
       }
