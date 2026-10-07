@@ -1171,7 +1171,6 @@ async function modelleriYukle() {
 const modeller = [
     "qwen2.5:14b",
     "qwen2.5:7b",
-    "ministral-3:14b",
     "llama3.1:latest",
     "qwen2.5:3b"
 ];

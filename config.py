@@ -31,6 +31,7 @@ PRIMARY_MODELS = [
     "qwen2.5:7b",        # dengeli (hızlı)
     "qwen2.5:3b",        # çok hızlı (basit sorular)
     "llama3.1:latest",   # alternatif
+    "ministral-3:14b",
 ]
 
 # Fallback zinciri (sırayla denenir)
@@ -42,19 +43,21 @@ FALLBACK_MODELS = [
 # --- Model Başına Context (num_ctx) ---
 # Daha büyük context = daha fazla KV cache = daha yavaş
 MODEL_CONTEXT_MAP = {
-    "qwen2.5:14b": 16384,      # ~2 GB KV cache
-    "qwen2.5:7b": 16384,       # ~1 GB
+    "qwen2.5:14b": 8192,      # ~1 GB KV cache
+    "qwen2.5:7b": 8192,       # ~1 GB
     "qwen2.5:3b": 8192,        # ~300 MB
-    "llama3.1:latest": 16384,
+    "llama3.1:latest": 8192,
+    "ministral-3:14b": 8192
 }
 
 # --- Model Başına Temperature ---
 # Düşük = tutarlı, Yüksek = yaratıcı
 MODEL_TEMP_MAP = {
-    "qwen2.5:14b": 0.6,        # kalite/dengeli
+    "qwen2.5:14b": 0.4,        # kalite/dengeli
     "qwen2.5:7b": 0.7,         # standart
     "qwen2.5:3b": 0.5,         # kısa cevaplar
     "llama3.1:latest": 0.7,
+    "ministral-3:14b": 0.5,
 }
 
 # --- Genel Sabitler ---
