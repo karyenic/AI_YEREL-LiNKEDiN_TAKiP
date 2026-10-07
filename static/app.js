@@ -2105,6 +2105,48 @@ async function keepAktar() {
   }
 }
 
+async function linkedinUrlKaydet() {
+  if (!aktifAdayId) {
+    alert("Önce bir aday kartı açın.");
+    return;
+  }
+
+  const input = document.getElementById("kart-linkedin-input");
+  if (!input) return;
+
+  const url = input.value.trim();
+
+  if (!url) {
+    alert("LinkedIn URL boş olamaz.");
+    return;
+  }
+
+  try {
+    const r = await fetch(`/api/candidates/${aktifAdayId}/linkedin`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ linkedin_url: url })
+    });
+
+    const d = await r.json();
+
+    if (!r.ok || !d.ok) {
+      alert("❌ " + (d.error || "Kaydedilemedi."));
+      return;
+    }
+
+    linkedinLinkGuncelle(url);
+
+    if (typeof adaylariYukle === "function") {
+      adaylariYukle();
+    }
+
+    alert("✅ LinkedIn URL kaydedildi.");
+
+  } catch (e) {
+    alert("❌ Hata: " + e);
+  }
+}
 
 function linkedinLinkGuncelle(url) {
   const input = document.getElementById("kart-linkedin-input");
