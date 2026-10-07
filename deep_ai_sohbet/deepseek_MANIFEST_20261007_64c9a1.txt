@@ -1,0 +1,14 @@
+
+---
+
+## 📌 Şimdi Sıradaki
+
+**Manifest v3'ü şimdi kopyalayıp bir txt dosyasına kaydet** (`manifest_v3.txt`). Sonra:
+
+1. **FAZ B testini yap** (Excel watcher sync)
+2. **Sonucu bana yaz** — manifest'e eklerim (v3 final)
+3. **Sonra `/blok-listesi`'ne geçeriz**
+
+**Manifest'i kopyala, kaydet, sonra test et.** 👇
+
+Not: Yukarıdaki manifest bloğu **tek parça** — tümünü seçip kopyalayabilirsin.

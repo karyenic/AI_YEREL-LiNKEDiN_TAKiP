@@ -3,26 +3,13 @@ from datetime import datetime
 import time
 import psutil
 from config import (MODEL_CONTEXT_MAP, DEFAULT_NUM_CTX, KEEP_ALIVE,
-                    DEFAULT_MODEL, DEFAULT_FALLBACK, MODEL_ROUTER,
-                    BASIT_TETIKLEYICILER)
+                    DEFAULT_MODEL, DEFAULT_FALLBACK)
 
 _warmed_models = set()
-
 
 def _get_num_ctx(model_adi):
     """Model bazli akilli num_ctx dondurur."""
     return MODEL_CONTEXT_MAP.get(model_adi, DEFAULT_NUM_CTX)
-
-
-def _model_sec(soru):
-    """Router: Soru tipine gore model secer."""
-    if not soru:
-        return MODEL_ROUTER["normal"]
-    soru_lower = soru.lower()
-    if any(k in soru_lower for k in BASIT_TETIKLEYICILER):
-        return MODEL_ROUTER["basit"]
-    return MODEL_ROUTER["normal"]
-
 
 def warm_up(model_adi=DEFAULT_MODEL):
     """Modeli VRAM e yukler. Uygulama acilisinda bir kere cagrilir."""
@@ -43,7 +30,6 @@ def warm_up(model_adi=DEFAULT_MODEL):
     except Exception as e:
         print(f"UYARI: Warm-up hatasi ({model_adi}): {e}")
         return False
-
 
 def _sistem_prompt(df_ozet):
     return f"""[SYSTEM ROLE & CORE OBJECTIVE]

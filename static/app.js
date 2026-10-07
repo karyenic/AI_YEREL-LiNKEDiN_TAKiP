@@ -1168,11 +1168,13 @@ async function modelleriYukle() {
   otomatikOpt.textContent = "🤖 Otomatik (Akıllı Seçim)";
   sel.appendChild(otomatikOpt);
 
-  const modeller = [
+const modeller = [
+    "qwen2.5:14b",
     "qwen2.5:7b",
-    "deepseek-r1:7b",
-    "llama3.1:latest"
-  ];
+    "ministral-3:14b",
+    "llama3.1:latest",
+    "qwen2.5:3b"
+];
 
   for (const m of modeller) {
 
@@ -1463,6 +1465,11 @@ document.addEventListener(
 
     setInterval(
       ollamaDurumGuncelle,
+      5000
+    );
+
+    setInterval(
+      excelBildirimGoster,
       5000
     );
 
@@ -1874,6 +1881,8 @@ function sirala(kolon) {
 }
 
 
+let _sonExcelZaman = null;
+
 async function excelBildirimGoster() {
   try {
     const r = await fetch("/api/excel/durum");
@@ -1881,6 +1890,15 @@ async function excelBildirimGoster() {
     const d = await r.json();
 
     if (!d.zaman) return;
+
+    // Aynı zaman damgası → atla (bildirim tekrar etmesin)
+    if (d.zaman === _sonExcelZaman) return;
+    _sonExcelZaman = d.zaman;
+
+    // Yeni tarama sonucu → listeyi yenile
+    if (typeof adaylariYukle === "function") {
+      adaylariYukle();
+    }
 
     const main = document.querySelector("main");
     if (!main) return;
