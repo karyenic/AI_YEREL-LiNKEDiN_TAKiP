@@ -26,7 +26,6 @@
     <div class="checks" style="align-items: center;">
       <label style="margin-right: 8px; color: #8b949e; font-weight: 600;">Başlangıç Statüsü:</label>
       <select id="yeni-aday-durum" style="padding: 8px 12px; background: #161b22; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; font-size: 15px;">
-        <option value="🆕 Yeni">🆕 Yeni</option>
         <option value="⚪ Değerlendirilecek">⚪ Değerlendirilecek</option>
         <option value="🟢 Aktif">🟢 Aktif</option>
         <option value="🔥 Sıcak">🔥 Sıcak</option>
@@ -65,18 +64,11 @@
 
             <thead>
         <tr>
-          <th onclick="sirala('id')" style="cursor:pointer;" title="Sırala">No</th>
+          <th onclick="sirala('id')" style="cursor:pointer; width:60px;" title="Sırala">ID</th>
           <th onclick="sirala('isim')" style="cursor:pointer;" title="Sırala">İsim</th>
-          <th onclick="sirala('tarih')" style="cursor:pointer;" title="Sırala">Tarih</th>
+          <th onclick="sirala('tarih')" style="cursor:pointer; width:120px;" title="Sırala">Kayıt Tarihi</th>
           <th onclick="sirala('aciklama')" style="cursor:pointer;" title="Sırala">Açıklama</th>
-          <th onclick="sirala('davet')" style="cursor:pointer;" title="Sırala">Davet</th>
-          <th onclick="sirala('randevu')" style="cursor:pointer;" title="Sırala">Randevu</th>
-          <th onclick="sirala('plan')" style="cursor:pointer;" title="Sırala">Plan</th>
-          <th onclick="sirala('kayit')" style="cursor:pointer;" title="Sırala">Kayıt</th>
-          <th onclick="sirala('takip')" style="cursor:pointer;" title="Sırala">Takip</th>
-          <th onclick="sirala('hayir')" style="cursor:pointer;" title="Sırala">Hayır</th>
-          <th onclick="sirala('is_ariyor')" style="cursor:pointer;" title="Sırala">İş Arıyor</th>
-          <th style="text-align:right;"></th>
+          <th style="text-align:right; width:90px;">İşlem</th>
         </tr>
       </thead>
 
@@ -247,7 +239,6 @@
       <label>Durum</label>
       <select id="gelisme-durum">
         <option value="">Durumu değiştirme</option>
-        <option value="🆕 Yeni">🆕 Yeni</option>
         <option value="⚪ Değerlendirilecek">⚪ Değerlendirilecek</option>
         <option value="🟢 Aktif">🟢 Aktif</option>
         <option value="🔥 Sıcak">🔥 Sıcak</option>
@@ -255,7 +246,6 @@
         <option value="🎓 SG">🎓 SG</option>
         <option value="❄️ DeepFreeze">❄️ DeepFreeze</option>
         <option value="⛔ Blok">⛔ Blok</option>
-        <option value="🔴 Olumsuz">🔴 Olumsuz</option>
       </select>
     </div>
 

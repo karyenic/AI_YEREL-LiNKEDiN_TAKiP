@@ -1,63 +1,81 @@
-# Python
+# ==================== Python ====================
 __pycache__/
 *.py[cod]
-*$py.class
+*.class
+*.egg-info/
+.pytest_cache/
 
-# Virtual environments
+# ==================== Virtual environments ====================
 .venv/
 venv/
 env/
 ENV/
 
-# IDE
+# ==================== IDE ====================
 .vscode/
 .idea/
+.gk_studio/
+*.swp
+*~
 
-# Local databases
+# ==================== Local databases ====================
 *.db
 *.sqlite
 *.sqlite3
+*.db-wal
+*.db-shm
+*.db-journal
 
-# Local candidate / Excel data
+# ==================== Local data ====================
 Data/
 data/
 *.xlsx
 *.xls
 *.xlsm
 
-# Local AI conversation data
-.gk_studio/
+# ==================== Backups ====================
+*.bak
+*.bak_*
+*.bak2_*
+*.backup
+*.yedek*
+*.yedek2*
+*_PARCA_*.txt
+*_BACKUP*
+BACKUP_*/
+backup_*/
+_BACKUP_BEFORE_GITHUB_RESET/
+_GITHUB_TEMP/
 
-# Logs
+# ==================== Gecici araclar ====================
+Araçlar/
+araclar/
+duzelt_*.py
+tespit.py
+
+# ==================== Gecici dosyalar ====================
+*.tmp
+Yeni Metin Belgesi.txt
+DOSYALAR.txt
+TUM_KODLAR*.txt
+*backup*
+*BACKUP*
+
+# ==================== Logs ====================
 *.log
+logs/
 
-# Environment / secrets
+# ==================== Environment / secrets ====================
 .env
 .env.*
 !.env.example
 
-# OS
+# ==================== OS ====================
 Thumbs.db
 .DS_Store
+desktop.ini
 
-# Backups
-_BACKUP_BEFORE_GITHUB_RESET/
-_GITHUB_TEMP/
-
-# Temporary files
-*.tmp
-*.bak
-*.backup
-# Yedek dosyalar
-*.yedek*
-*.yedek2*
-*.bak
-*~
-*.DURAK2_BACKUP*
-
-DOSYALAR.txt
+# Yedek dosyalar (genel)
 *yedek*
-*backup*
-*BACKUP*
-TUM_KODLAR*.txt
-*_PARCA_*.txt
+*yedek
+

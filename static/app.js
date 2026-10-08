@@ -66,18 +66,6 @@ async function adaylariYukle() {
         <span class="durum-top" title="${htmlGuvenli(durumEtiketi(a.durum))}">${durumTopp(a.durum)}</span>${htmlGuvenli(aciklamaTemizle(a.aciklama).slice(0, 60))}
       </td>
 
-      <td>${bool(a.davet)}</td>
-      <td>${bool(a.randevu)}</td>
-      <td>${bool(a.plan)}</td>
-      <td>${bool(a.kayit)}</td>
-      <td>${bool(a.takip)}</td>
-      <td>${bool(a.hayir)}</td>
-      <td>${bool(a.is_ariyor)}</td>
-
-      <td style="white-space:nowrap;">
-        
-      </td>
-
       <td style="white-space:nowrap; text-align:right;">
         <button
           onclick="event.stopPropagation(); adaySilOnay(${a.id}, '${htmlGuvenli(a.isim).replace(/'/g, "\\'")}')"
@@ -2247,7 +2235,6 @@ function durumTopp(durum) {
   if (d.includes("SG") || d.includes("🎓")) return "🎓";
   if (d.includes("DeepFreeze") || d.includes("❄")) return "❄️";
   if (d.includes("Blok") || d.includes("⛔")) return "⛔";
-  if (d.includes("Olumsuz") || d.includes("🔴")) return "🔴";
 
 
   return "🆕";
@@ -2288,7 +2275,6 @@ function otomatikStatuBelirle() {
   else if (olayTipi === "Kayıt") {
     durumSecici.value = "🎓 SG";
   } 
-  else if (olayTipi === "Hayır") {
-    durumSecici.value = "❄️ DeepFreeze";
-  }
+  // Hayır: otomatik atama YOK.
+  // Kullanici manuel olarak ❄️ DeepFreeze veya ⛔ Blok secer.
 }

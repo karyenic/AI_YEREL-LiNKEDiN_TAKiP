@@ -1,15 +1,21 @@
 import ollama
-from datetime import datetime
 import time
+from datetime import datetime
 import psutil
-from config import (MODEL_CONTEXT_MAP, DEFAULT_NUM_CTX, KEEP_ALIVE,
-                    DEFAULT_MODEL, DEFAULT_FALLBACK)
+
+
+from config import (MODEL_CONTEXT_MAP, MODEL_TEMP_MAP, DEFAULT_NUM_CTX,
+                    KEEP_ALIVE, DEFAULT_MODEL, DEFAULT_FALLBACK)
 
 _warmed_models = set()
 
 def _get_num_ctx(model_adi):
     """Model bazli akilli num_ctx dondurur."""
     return MODEL_CONTEXT_MAP.get(model_adi, DEFAULT_NUM_CTX)
+
+def _get_temp(model_adi):
+    """Model bazli temperature dondurur."""
+    return MODEL_TEMP_MAP.get(model_adi, 0.5)
 
 def warm_up(model_adi=DEFAULT_MODEL):
     """Modeli VRAM e yukler. Uygulama acilisinda bir kere cagrilir."""
@@ -36,22 +42,31 @@ def _sistem_prompt(df_ozet):
 You are an elite, highly rigorous AI Executive Assistant and Chief Data Analyst specialized in Candidate Tracking Systems (ATS), Network Marketing operations, conversion forecasting, and behavioral pattern analysis.
 Your core objective is to act as a strategic partner: analyzing candidate progression, predicting conversion probabilities based on historical patterns, identifying bottlenecks, and providing actionable, forward-looking recommendations.
 
-[CANDIDATE CATEGORIES (The EXACT 8 Funnel States in this system)]
-1. 🆕 Yeni (New): Just added, no status decided yet
-2. ⚪ Değerlendirilecek (To be evaluated): Worth considering later
-3. 🟢 Aktif (Active): Normal follow-up, ongoing
-4. 🔥 Sıcak (Hot): High potential, urgent follow-up needed
-5. 🔔 Takip (Follow-up): Plan was positive but no registration yet
-6. 🎓 SG (Mezun / Graduated): Registration completed, exited candidate funnel
-7. ❄️ DeepFreeze: On hold, may be revisited later (3-6 months)
-8. 🔴 Olumsuz (Negative): Hard NO, do not contact again
+[CANDIDATE CATEGORIES (The EXACT statuses in this system)]
 
-[AUTOMATIC STATUS TRANSITIONS]
-The system automatically transitions candidates based on checkboxes:
+STARTING STATUSES (user selects when creating a candidate):
+1. ⚪ Değerlendirilecek (To be evaluated): Worth considering later
+2. 🟢 Aktif (Active): Normal follow-up, ongoing
+3. 🔥 Sıcak (Hot): High potential, urgent follow-up needed
+
+AUTOMATIC STATUSES (system assigns based on events):
+4. 🔔 Takip (Follow-up): Plan was positive but no registration yet
+5. 🎓 SG (Mezun / Graduated): Registration completed, exited funnel
+6. ❄️ DeepFreeze: SOFT NO — on hold, may be revisited later (3-6 months)
+7. ⛔ Blok: HARD NO — blocked, hidden from main list, stored only in DB
+
+[STATUS TRANSITION RULES]
 - Plan ✓ + Kayıt ✓ → 🎓 SG (Mezun)
 - Plan ✓ + Kayıt ✗ → 🔔 Takip
 - Plan ✗ → ❄️ DeepFreeze
-- Hayır ✓ → 🔴 Olumsuz
+- Hayır ✓ → NO AUTO-ASSIGNMENT. The user must manually choose between:
+    * ❄️ DeepFreeze (soft no, still visible in list)
+    * ⛔ Blok (hard no, hidden from list)
+  The AI may SUGGEST one based on the conversation context, but must NEVER auto-assign.
+
+[IMPORTANT]
+- "🆕 Yeni" and "🔴 Olumsuz" are DEPRECATED. Never suggest them.
+- New candidates must start as: ⚪ Değerlendirilecek, 🟢 Aktif, or 🔥 Sıcak.
 
 [ADVANCED CAPABILITIES & TASKS]
 1. Predictive Modeling & Probability: Evaluate candidate statuses (invitations, meetings, presentations, registrations) to calculate conversion likelihoods and predict dropouts.
@@ -96,21 +111,22 @@ def chat_stream(mesajlar, model=DEFAULT_MODEL, fallback=DEFAULT_FALLBACK, durum=
     def _deneme(m):
         t0 = time.time()
         num_ctx = _get_num_ctx(m)
-        print(f"{m} cagriliyor (num_ctx: {num_ctx})...")
+        sicaklik = _get_temp(m)
+        print(f"{m} cagriliyor (num_ctx: {num_ctx}, temp: {sicaklik})...")
         full = ollama.chat(
-    model=m,
-    messages=mesajlar,
-    options={
-        "num_ctx": num_ctx,
-        "temperature": 0.7,
-        "top_p": 0.9,
-        "top_k": 40,
-        "repeat_penalty": 1.15,
-        "repeat_last_n": 256,
-    },
-    keep_alive=KEEP_ALIVE,
-    stream=True
-)
+            model=m,
+            messages=mesajlar,
+            options={
+                "num_ctx": num_ctx,
+                "temperature": sicaklik,
+                "top_p": 0.9,
+                "top_k": 40,
+                "repeat_penalty": 1.15,
+                "repeat_last_n": 256,
+            },
+            keep_alive=KEEP_ALIVE,
+            stream=True
+        )
         ilk = True
         for chunk in full:
             if ilk:

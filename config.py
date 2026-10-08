@@ -42,19 +42,19 @@ FALLBACK_MODELS = [
 # --- Model BaÅŸÄ±na Context (num_ctx) ---
 # Daha bÃ¼yÃ¼k context = daha fazla KV cache = daha yavaÅŸ
 MODEL_CONTEXT_MAP = {
-    "qwen2.5:14b": 8192,      # ~1 GB KV cache
-    "qwen2.5:7b": 8192,       # ~1 GB
-    "qwen2.5:3b": 8192,        # ~300 MB
+    "qwen2.5:14b": 8192,
+    "qwen2.5:7b": 8192,
+    "qwen2.5:3b": 4096,        # 3B için 4096 yeterli
     "llama3.1:latest": 8192,
 }
 
 # --- Model BaÅŸÄ±na Temperature ---
 # DÃ¼ÅŸÃ¼k = tutarlÄ±, YÃ¼ksek = yaratÄ±cÄ±
 MODEL_TEMP_MAP = {
-    "qwen2.5:14b": 0.4,        # kalite/dengeli
-    "qwen2.5:7b": 0.7,         # standart
-    "qwen2.5:3b": 0.5,         # kÄ±sa cevaplar
-    "llama3.1:latest": 0.7,
+    "qwen2.5:14b": 0.35,       # ana model — tutarlı/kaliteli
+    "qwen2.5:7b": 0.45,        # fallback
+    "qwen2.5:3b": 0.40,        # hızlı işler
+    "llama3.1:latest": 0.50,   # alternatif
 }
 
 # --- Genel Sabitler ---

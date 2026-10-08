@@ -8,7 +8,7 @@ echo   LinkedIn Takip Asistani (Flask)
 echo ================================================
 
 set OLLAMA_EXE=C:\AI_IPEX\Ollama\portable\ollama.exe
-set OLLAMA_KEEP_ALIVE=30m
+set OLLAMA_KEEP_ALIVE=24h
 
 if not exist "%OLLAMA_EXE%" (
     echo [UYARI] IPEX Ollama bulunamadi: %OLLAMA_EXE%
@@ -40,7 +40,7 @@ set NO_PROXY=localhost,127.0.0.1
 REM 6. Ollama sunucu ayarlari
 set OLLAMA_HOST=127.0.0.1:11434
 set OLLAMA_NUM_PARALLEL=1
-set OLLAMA_KEEP_ALIVE=30m
+set OLLAMA_KEEP_ALIVE=24h
 set OLLAMA_MAX_LOADED_MODELS=1
 set OLLAMA_FLASH_ATTENTION=false
 

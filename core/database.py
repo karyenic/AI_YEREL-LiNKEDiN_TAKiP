@@ -856,7 +856,7 @@ def aday_durum_otomatik_guncelle(aday_id, davet=0, plan=0, kayit=0, hayir=0):
     """Checkbox'lara gore statuyu otomatik gunceller.
     
     Kurallar:
-    - Hayir ✓ -> 🔴 Olumsuz
+    - Hayir -> Otomatik atama YOK (manuel secim: DeepFreeze veya Blok)
     - Plan ✓ + Kayit ✓ -> 🎓 SG
     - Plan ✓ + Kayit ✗ -> 🔔 Takip
     - Plan ✗ (ve davet yok) -> ❄️ DeepFreeze
@@ -864,8 +864,8 @@ def aday_durum_otomatik_guncelle(aday_id, davet=0, plan=0, kayit=0, hayir=0):
     yeni_durum = None
     
     if hayir == 1:
-        yeni_durum = "🔴 Olumsuz"
-    elif plan == 1 and kayit == 1:
+        return False  # Manuel secim gerekli (DeepFreeze veya Blok), otomatik atama yapilmaz
+    if plan == 1 and kayit == 1:
         yeni_durum = "🎓 SG"
     elif plan == 1 and kayit == 0:
         yeni_durum = "🔔 Takip"
