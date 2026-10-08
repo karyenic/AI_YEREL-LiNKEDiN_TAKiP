@@ -2278,3 +2278,117 @@ function otomatikStatuBelirle() {
   // Hayır: otomatik atama YOK.
   // Kullanici manuel olarak ❄️ DeepFreeze veya ⛔ Blok secer.
 }
+
+
+
+/* ============================================================
+   SÜTUN GENİŞLİĞİ AYARLAMA v2 (aday-tablo)
+   - Event delegation: tek document listener
+   - MutationObserver: thead yeniden render edilirse tutamaçları yeniler
+   - Ayarlar localStorage'da saklanır
+   ============================================================ */
+(function () {
+  const KEY = "aday_tablo_kolon_genislik_v1";
+  const TABLO = "#aday-tablo";
+  const GRIP_CLASS = "col-resizer";
+
+  let aktifTh = null;
+  let baslangicX = 0;
+  let baslangicW = 0;
+
+  function thlariAl() {
+    return document.querySelectorAll(TABLO + " thead th");
+  }
+
+  function yukle() {
+    let kayit = {};
+    try { kayit = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
+    thlariAl().forEach((th, i) => {
+      if (kayit[i]) th.style.width = kayit[i];
+    });
+  }
+
+  function kaydet() {
+    const kayit = {};
+    thlariAl().forEach((th, i) => {
+      kayit[i] = th.style.width || (th.offsetWidth + "px");
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(kayit)); } catch (e) {}
+  }
+
+  function tutamacEkle() {
+    thlariAl().forEach((th) => {
+      if (th.querySelector("." + GRIP_CLASS)) return;
+      const grip = document.createElement("span");
+      grip.className = GRIP_CLASS;
+      grip.title = "Sürükle: genişliği ayarla · Çift tıkla: sıfırla";
+      th.appendChild(grip);
+    });
+  }
+
+  /* --- TEK global mousemove --- */
+  document.addEventListener("mousemove", (e) => {
+    if (!aktifTh) return;
+    const yeni = Math.max(40, baslangicW + (e.pageX - baslangicX));
+    aktifTh.style.width = yeni + "px";
+  });
+
+  /* --- TEK global mouseup --- */
+  document.addEventListener("mouseup", () => {
+    if (!aktifTh) return;
+    const eskiTh = aktifTh;
+    aktifTh = null;
+    document.body.classList.remove("col-resizing");
+    const grip = eskiTh.querySelector("." + GRIP_CLASS);
+    if (grip) grip.classList.remove("dragging");
+    kaydet();
+  });
+
+  /* --- Event delegation: mousedown --- */
+  document.addEventListener("mousedown", (e) => {
+    const grip = e.target.closest && e.target.closest("." + GRIP_CLASS);
+    if (!grip) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    aktifTh = grip.parentElement;
+    baslangicX = e.pageX;
+    baslangicW = aktifTh.offsetWidth;
+
+    grip.classList.add("dragging");
+    document.body.classList.add("col-resizing");
+  });
+
+  /* --- Çift tıklama: sıfırla --- */
+  document.addEventListener("dblclick", (e) => {
+    const grip = e.target.closest && e.target.closest("." + GRIP_CLASS);
+    if (!grip) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const th = grip.parentElement;
+    th.style.width = "";
+    kaydet();
+  });
+
+  /* --- MutationObserver: thead değişirse tutamaçları yenile --- */
+  function observerBaslat() {
+    const thead = document.querySelector(TABLO + " thead");
+    if (!thead) return;
+    const obs = new MutationObserver(() => {
+      tutamacEkle();
+    });
+    obs.observe(thead, { childList: true, subtree: true });
+  }
+
+  function baslat() {
+    yukle();
+    tutamacEkle();
+    observerBaslat();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", baslat);
+  } else {
+    baslat();
+  }
+})();

@@ -13,51 +13,40 @@
 <section class="panel print-gizle">
   <h2>Yeni Aday Ekle</h2>
 
-  <div class="grid">
-    <input id="isim" placeholder="İsim*">
-    <input id="aciklama" placeholder="Açıklama">
-  </div>
-
-  <div style="margin-top:10px;">
-    <input id="linkedin-url" placeholder="🔗 LinkedIn URL (opsiyonel): https://linkedin.com/in/kullanici-adi" style="width:100%; padding:12px; font-size:15px; background:#0d1117; color:#c9d1d9; border:1px solid #30363d; border-radius:6px;">
-  </div>
-
-  <div class="checks-row">
-    <div class="checks" style="align-items: center;">
-      <label style="margin-right: 8px; color: #8b949e; font-weight: 600;">Başlangıç Statüsü:</label>
-      <select id="yeni-aday-durum" style="padding: 8px 12px; background: #161b22; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; font-size: 15px;">
-        <option value="⚪ Değerlendirilecek">⚪ Değerlendirilecek</option>
-        <option value="🟢 Aktif">🟢 Aktif</option>
-        <option value="🔥 Sıcak">🔥 Sıcak</option>
-      </select>
-    </div>
-
+  <div class="yeni-aday-grid">
+    <input id="isim" placeholder="İsim*" class="ya-isim">
+    <input id="linkedin-url" placeholder="🔗 LinkedIn URL (opsiyonel)" class="ya-url">
+    <select id="yeni-aday-durum" class="ya-durum" title="Başlangıç Statüsü">
+      <option value="⚪ Değerlendirilecek">⚪ Değerlendirilecek</option>
+      <option value="🟢 Aktif">🟢 Aktif</option>
+      <option value="🔥 Sıcak">🔥 Sıcak</option>
+    </select>
     <button onclick="adayEkle()" class="btn-ekle" type="button">✅ Ekle</button>
-
     <button onclick="keepModalAc()" class="btn-keep" type="button">📱 Keep'ten Aktar</button>
-
     <button onclick="excelIceAktar()" class="btn-excel-ice" type="button">📥 Excel İçe Aktar</button>
+    <input id="aciklama" placeholder="Açıklama (opsiyonel)" class="ya-aciklama">
   </div>
 </section>
 
 
 <section class="panel">
 
-<h2>
+<div class="aday-listesi-header">
+  <h2>
     Aday Listesi
     <span id="watcher-not" class="muted"></span>
   </h2>
-
-<div style="margin-bottom:12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+  <div class="aday-listesi-arac">
     <input
       id="aday-ara"
       type="text"
-      placeholder="Ara: isim, aciklama, tarih..."
-      style="flex:1; min-width:300px; padding:12px; font-size:15px; background:#0d1117; color:#c9d1d9; border:1px solid #30363d; border-radius:6px;"
+      placeholder="Ara: isim, açıklama, tarih..."
       oninput="adayAra()"
     >
-    <span style="color:#8b949e; font-size:13px; white-space:nowrap;">💡 Kartı görmek için satıra tıklayın</span>
+    <span class="aday-ara-hint">💡 Kartı görmek için satıra tıklayın</span>
   </div>
+</div>
+
 
   <div class="table-scroll">
     <table id="aday-tablo">
@@ -76,7 +65,6 @@
 
     </table>
   </div>
-
   
 </section>
 

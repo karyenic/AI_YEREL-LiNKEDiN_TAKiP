@@ -606,8 +606,9 @@ tbody tr.aday-satir:hover td {
 }
 
 .metric-card .lbl {
-  font-size: 13px;
-  color: #8b949e;
+  font-size: 13.5px;
+  color: #b1bac4;
+  font-weight: 500;
   margin-top: 4px;
 }
 
@@ -851,6 +852,7 @@ tbody tr.aday-satir:hover td {
   --text: #c9d1d9;
   --text-strong: #ffffff;
   --text-muted: #8b949e;
+  --text-soft: #b1bac4;
   --blue: #58a6ff;
   --green: #3fb950;
   --green-bg: #238636;
@@ -867,6 +869,7 @@ tbody tr.aday-satir:hover td {
   --text: #26313d;
   --text-strong: #111827;
   --text-muted: #596575;
+  --text-soft: #3f4a58;
   --blue: #1769aa;
   --green: #218838;
   --green-bg: #218838;
@@ -953,10 +956,12 @@ select,
 }
 
 .metric-hint {
-  margin-top: 7px;
-  font-size: 10px;
-  color: var(--text-muted);
-  opacity: 0.7;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--text-soft);
+  opacity: 1;
+  font-weight: 500;
+  letter-spacing: 0.15px;
 }
 
 .theme-toggle {
@@ -1015,19 +1020,22 @@ button {
 }
 
 .report-card-subtitle {
-  margin-top: 3px;
-  color: var(--text-muted);
-  font-size: 12px;
+  margin-top: 4px;
+  color: var(--text-soft);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
 }
 
 .report-badge {
   flex: 0 0 auto;
-  padding: 4px 9px;
+  padding: 4px 10px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  color: var(--text-muted);
-  font-size: 10px;
+  color: var(--text-soft);
+  font-size: 10.5px;
   font-weight: 700;
+  letter-spacing: 0.3px;
 }
 
 .report-list {
@@ -1085,6 +1093,20 @@ button {
 .journal-textarea::placeholder {
   color: var(--text-muted);
   opacity: 0.9;
+}
+
+input::placeholder,
+textarea::placeholder,
+select::placeholder,
+.chat-input textarea::placeholder,
+.grid input::placeholder,
+.aday-bilgi-panel input::placeholder,
+.aday-bilgi-panel textarea::placeholder,
+.gelisme-form input::placeholder,
+.gelisme-form textarea::placeholder {
+  color: var(--text-soft);
+  opacity: 0.8;
+  font-style: italic;
 }
 
 .journal-textarea:focus {
@@ -1172,8 +1194,9 @@ button {
 }
 
 .metric-card .lbl {
-  margin-top: 5px;
-  font-size: 12px;
+  color: var(--text-soft);
+  font-size: 13.5px;
+  font-weight: 500;
 }
 
 .oranlar {
@@ -1756,4 +1779,154 @@ main {
   width: 100% !important;
   max-width: 100% !important;
   box-sizing: border-box;
+}
+
+
+
+/* ============================================================
+   SÜTUN GENİŞLİĞİ AYARLAMA v2 (#aday-tablo)
+   ============================================================ */
+#aday-tablo thead th {
+  position: relative;
+  user-select: none;
+}
+
+/* Tutamaç: 12px geniş tıklama alanı, görsel çizgi ortada 2px */
+#aday-tablo .col-resizer {
+  position: absolute;
+  top: 0;
+  right: -6px;
+  width: 12px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  background: transparent;
+  z-index: 5;
+}
+
+#aday-tablo .col-resizer::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  background: transparent;
+  border-radius: 2px;
+  transition: background 0.15s ease;
+}
+
+#aday-tablo .col-resizer:hover::before,
+#aday-tablo .col-resizer.dragging::before {
+  background: var(--blue);
+  opacity: 0.85;
+}
+
+body.col-resizing {
+  cursor: col-resize !important;
+}
+body.col-resizing * {
+  user-select: none !important;
+}
+
+
+/* ============================================================
+   1b — YENİ ADAY EKLE + ADAY LİSTESİ BAŞLIĞI
+   ============================================================ */
+
+/* --- Yeni Aday Ekle formu --- */
+.yeni-aday-grid {
+  display: grid;
+  grid-template-columns: minmax(140px, 180px) minmax(260px, 1fr) auto auto auto auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.yeni-aday-grid input,
+.yeni-aday-grid select {
+  padding: 12px;
+  font-size: 15px;
+  background: #0d1117;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.yeni-aday-grid .ya-durum {
+  background: #161b22;
+  padding: 8px 12px;
+  width: auto;
+  min-width: 170px;
+}
+
+.yeni-aday-grid .ya-aciklama {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+}
+
+/* --- Aday Listesi başlık satırı --- */
+.aday-listesi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.aday-listesi-header h2 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.aday-listesi-arac {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.aday-listesi-arac input {
+  width: 260px;
+  max-width: 100%;
+  padding: 9px 12px;
+  font-size: 14px;
+  background: #0d1117;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  font-family: inherit;
+}
+
+.aday-ara-hint {
+  color: #8b949e;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* --- Mobil / dar ekran --- */
+@media (max-width: 900px) {
+  .yeni-aday-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .yeni-aday-grid .ya-url,
+  .yeni-aday-grid .ya-aciklama {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 560px) {
+  .yeni-aday-grid {
+    grid-template-columns: 1fr;
+  }
+  .aday-listesi-arac input {
+    width: 100%;
+  }
 }
