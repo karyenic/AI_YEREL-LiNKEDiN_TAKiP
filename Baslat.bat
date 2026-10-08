@@ -7,7 +7,8 @@ echo ================================================
 echo   LinkedIn Takip Asistani (Flask)
 echo ================================================
 
-set OLLAMA_EXE=C:\AI_IPEX\Ollama\portable\ollama.exeset OLLAMA_KEEP_ALIVE=30m
+set OLLAMA_EXE=C:\AI_IPEX\Ollama\portable\ollama.exe
+set OLLAMA_KEEP_ALIVE=30m
 
 if not exist "%OLLAMA_EXE%" (
     echo [UYARI] IPEX Ollama bulunamadi: %OLLAMA_EXE%

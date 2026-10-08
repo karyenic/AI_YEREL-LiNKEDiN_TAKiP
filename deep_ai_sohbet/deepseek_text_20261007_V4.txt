@@ -1,0 +1,57 @@
+═══════════════════════════════════════════════════════════════════════
+  AI_YEREL-LiNKEDiN_TAKiP — ÇALIŞMA MANİFESTİ v4
+  Tarih: 2026-10-07 (akşam kapanışı)
+  Amaç: Sonraki sohbetin tüm süreci ve yeni kararları kavraması
+  Önceki manifest: v3 (2026-10-07 sabah)
+  Git son commit: 139e967
+═══════════════════════════════════════════════════════════════════════
+
+## 1. PROJE KİMLİĞİ
+
+- Proje adı: AI_YEREL-LiNKEDiN_TAKiP
+- Yerel yol: C:\AI_YEREL\LiNKEDiN_TAKiP
+- GitHub: https://github.com/karyenic/AI_YEREL-LiNKEDiN_TAKiP
+- Branch: main
+- Amaç: LinkedIn aday takip programı (ATS benzeri)
+- Kullanıcı: Tek kişi (karyenic)
+- Kullanıcı profili: Kodlama bilgisi sınırlı — ADIM ADIM,
+  Ctrl+F ile "bul ve değiştir" talimatları ile çalışılmalı.
+  Tam yol verilmeli. Yapıştırma kayıpları olabilir → her
+  büyük değişiklik sonrası doğrulama iste.
+- Donanım: Intel Arc 140V (16GB) + 32GB RAM + IPEX/SYCL
+
+## 2. TEKNOLOJİ YIĞINI
+
+- Backend: Flask
+- Frontend: Saf JS + CSS
+- DB: SQLite (linkedin_takip.db, sohbet_gecmisi.db)
+  → WAL mode aktif
+- AI: Ollama + IPEX-LLM
+- Python: 3.11+ (venv)
+- Port: 5050 (Flask), 11434 (Ollama)
+
+## 3. AKTİF MODEL AYARLARI (v4 — KRİTİK)
+
+### Aktif Modeller
+- DEFAULT_MODEL = "qwen2.5:14b"     ← kaliteli cevap
+- DEFAULT_FALLBACK = "qwen2.5:7b"   ← hızlı, stabil
+- KEEP_ALIVE = "24h"                 ← VRAM'de kalır
+- DEFAULT_NUM_CTX = 8192
+
+### MODEL_CONTEXT_MAP (hepsi 8192)
+- qwen2.5:14b → 8192
+- qwen2.5:7b → 8192
+- qwen2.5:3b → 8192
+- llama3.1:latest → 8192
+
+### MODEL_TEMP_MAP
+- qwen2.5:14b → 0.6
+- qwen2.5:7b → 0.7
+- qwen2.5:3b → 0.5
+- llama3.1:latest → 0.7
+
+### PRIMARY_MODELS (frontend dropdown)
+- qwen2.5:14b, qwen2.5:7b, qwen2.5-coder:14b, llama3.1:latest, qwen2.5:3b
+- NOT: ministral-3:14b ÇIKARILDI (template uyumsuzluğu — currentDate hatası)
+
+### Baslat.bat — Ollama env
