@@ -69,11 +69,94 @@ ADAY_OLAY_LIMIT = 3
 ADAY_PROMPT_LIMIT = 50
 
 
+# ═══════════════════════════════════════════════════════════════════════
+# v6 MADDE 4 — AI PARAMETRELERI + STATU/OLAY TEK KAYNAK
+# ═══════════════════════════════════════════════════════════════════════
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# FLASK
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# --- Model Basina Top-p (nucleus sampling) ---
+MODEL_TOP_P_MAP = {
+    "qwen2.5:14b": 0.90,
+    "qwen2.5:7b": 0.90,
+    "qwen2.5:3b": 0.95,
+    "llama3.1:latest": 0.90,
+}
 
+# --- Model Basina Top-k ---
+MODEL_TOP_K_MAP = {
+    "qwen2.5:14b": 40,
+    "qwen2.5:7b": 40,
+    "qwen2.5:3b": 50,
+    "llama3.1:latest": 40,
+}
+
+# --- Model Basina Repeat Penalty ---
+MODEL_REPEAT_PENALTY_MAP = {
+    "qwen2.5:14b": 1.15,
+    "qwen2.5:7b": 1.15,
+    "qwen2.5:3b": 1.10,
+    "llama3.1:latest": 1.10,
+}
+
+# --- Model Basina Repeat Last N ---
+MODEL_REPEAT_LAST_N_MAP = {
+    "qwen2.5:14b": 256,
+    "qwen2.5:7b": 256,
+    "qwen2.5:3b": 256,
+    "llama3.1:latest": 256,
+}
+
+# --- Analiz Profili (strateji/degerlendirme istekleri icin dusuk temp) ---
+ANALIZ_TEMP_MAP = {
+    "qwen2.5:14b": 0.20,
+    "qwen2.5:7b": 0.25,
+    "qwen2.5:3b": 0.30,
+    "llama3.1:latest": 0.25,
+}
+
+# --- Sohbet Baglami ---
+CHAT_GECMIS_LIMIT = 6
+
+# --- ADAY STATULERI (TEK KAYNAK) ---
+# DB'de ve UI dropdown'larinda bu "tam" deger kullanilir.
+ADAY_STATULERI = [
+    # ON TESPIT (aday listeye girerken kullanici secer)
+    {"kod": "degerlendirilecek", "tam": "⚪ Değerlendirilecek", "katman": "on_tespit",
+     "aciklama": "Sonra degerlendirilmek uzere"},
+    {"kod": "aktif", "tam": "🟢 Aktif", "katman": "on_tespit",
+     "aciklama": "Surec devam ediyor"},
+    {"kod": "sicak", "tam": "🔥 Sıcak", "katman": "on_tespit",
+     "aciklama": "Yuksek potansiyel, acil takip"},
+    # SONUC (surec sonunda atanir)
+    {"kod": "takip", "tam": "🔔 Takip", "katman": "sonuc",
+     "aciklama": "Plan OK, kayit yok"},
+    {"kod": "sg", "tam": "🎓 SG", "katman": "sonuc",
+     "aciklama": "Kayit tamamlandi"},
+    {"kod": "deepfreeze", "tam": "❄️ DeepFreeze", "katman": "sonuc",
+     "aciklama": "Yumusak hayir"},
+    {"kod": "blok", "tam": "⛔ Blok", "katman": "sonuc",
+     "aciklama": "Net hayir, listeden gizli"},
+]
+
+# --- OLAY TIPLERI (TEK KAYNAK — bugun duzeltilen bug icin) ---
+# UI dropdown'inda gorunen "tam" deger ile eslesir.
+# "bayrak" alani: bu olay secildiginde hangi checkbox set edilir.
+OLAY_TIPLERI = [
+    {"kod": "not",         "tam": "Not / Mesaj",           "bayrak": None},
+    {"kod": "davet",       "tam": "Davet Yapıldı",         "bayrak": "davet"},
+    {"kod": "plan",        "tam": "Plan (Sunum) Yapıldı",  "bayrak": "plan"},
+    {"kod": "takip_g",     "tam": "Takip Görüşmesi",       "bayrak": "takip"},
+    {"kod": "kayit",       "tam": "Kayıt İşlemi",          "bayrak": "kayit"},
+    {"kod": "hayir",       "tam": "Hayır / Olumsuz",       "bayrak": "hayir"},
+    {"kod": "sadece_durum","tam": "Sadece Durum Değiştir", "bayrak": None},
+]
+
+# --- Statu Gecis Kurallari (Otomatik) ---
+STATU_GECIS_KURALLARI = [
+    {"kosul": "hayir>=1",           "hedef": "deepfreeze", "tip": "otomatik"},
+    {"kosul": "plan=1 and kayit=1", "hedef": "sg",         "tip": "otomatik"},
+    {"kosul": "plan=1 and kayit=0", "hedef": "takip",      "tip": "otomatik"},
+    {"kosul": "plan=0 and davet=1", "hedef": "aktif",      "tip": "otomatik"},
+]
 FLASK_HOST = "127.0.0.1"
 FLASK_PORT = 5050
 FLASK_DEBUG = False
