@@ -1,6 +1,6 @@
 ﻿import sqlite3
 from flask import Blueprint, jsonify, request
-from config import ADAY_DB
+from config import ADAY_DB, OLAY_TIPLERI
 
 from core.database import (
     aday_durum_otomatik_guncelle,
@@ -124,8 +124,43 @@ def gelisme_ekle(aday_id):
     hayir = 0
     takip = 0
     randevu = 0
+    # ═══════════════════════════════════════════════════════════
+    # OLAY TIPINDEN CHECKBOX CIKARIMI (config.OLAY_TIPLERI'ndan)
+    # ═══════════════════════════════════════════════════════════
+    # RANDEVU TARIHI/SAATI DOLUYSA randevu=1
+    if randevu_tarihi or randevu_saati:
+        randevu = 1
     
-    tip = olay_tipi.lower()
+    metin = olay_metni.lower()
+    
+    # OLAY TIPINDEN (birincil) — HTML value ile birebir eslesir
+    for _t in OLAY_TIPLERI:
+        if _t["html_value"] == olay_tipi:
+            _b = _t["bayrak"]
+            if _b == "davet":
+                davet = 1
+            elif _b == "plan":
+                plan = 1
+            elif _b == "takip":
+                takip = 1
+            elif _b == "kayit":
+                kayit = 1
+            elif _b == "hayir":
+                hayir = 1
+            break
+    
+    # METINDEN (ikincil - fallback) — kullanicinin serbest metnine gore
+    if "plan anlatıldı" in metin or "plan anlatildi" in metin:
+        plan = 1
+    if "kayıt yapıldı" in metin or "kayit yapildi" in metin or "kayıt oldu" in metin or "kayit oldu" in metin:
+        kayit = 1
+    if "davet yapıldı" in metin or "davet yapildi" in metin:
+        davet = 1
+    if "hayır dedi" in metin or "hayir dedi" in metin or "reddetti" in metin:
+        hayir = 1
+    if "randevu oluştu" in metin or "randevu olustu" in metin:
+        randevu = 1    
+
     # RANDEVU TARIHI/SAATI DOLUYSA randevu=1
     if randevu_tarihi or randevu_saati:
         randevu = 1

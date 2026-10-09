@@ -141,13 +141,13 @@ ADAY_STATULERI = [
 # UI dropdown'inda gorunen "tam" deger ile eslesir.
 # "bayrak" alani: bu olay secildiginde hangi checkbox set edilir.
 OLAY_TIPLERI = [
-    {"kod": "not",         "tam": "Not / Mesaj",           "bayrak": None},
-    {"kod": "davet",       "tam": "Davet Yapıldı",         "bayrak": "davet"},
-    {"kod": "plan",        "tam": "Plan (Sunum) Yapıldı",  "bayrak": "plan"},
-    {"kod": "takip_g",     "tam": "Takip Görüşmesi",       "bayrak": "takip"},
-    {"kod": "kayit",       "tam": "Kayıt İşlemi",          "bayrak": "kayit"},
-    {"kod": "hayir",       "tam": "Hayır / Olumsuz",       "bayrak": "hayir"},
-    {"kod": "sadece_durum","tam": "Sadece Durum Değiştir", "bayrak": None},
+    {"kod": "not",          "html_value": "Not",                "bayrak": None},
+    {"kod": "davet",        "html_value": "Davet",              "bayrak": "davet"},
+    {"kod": "plan",         "html_value": "Plan",               "bayrak": "plan"},
+    {"kod": "takip_g",      "html_value": "Takip Görüşmesi",    "bayrak": "takip"},
+    {"kod": "kayit",        "html_value": "Kayıt",              "bayrak": "kayit"},
+    {"kod": "hayir",        "html_value": "Hayır",              "bayrak": "hayir"},
+    {"kod": "sadece_durum", "html_value": "Durum Değişikliği",  "bayrak": None},
 ]
 
 # --- Statu Gecis Kurallari (Otomatik) ---
