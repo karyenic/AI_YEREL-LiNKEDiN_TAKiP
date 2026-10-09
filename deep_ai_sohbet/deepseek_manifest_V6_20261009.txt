@@ -246,3 +246,144 @@ anlaması için yeterli. Sonraki sohbet:
   Manifest v6 sonu — 2026-10-09 gece kapanışı
   Yarın taze kafayla devam. Kolay gelsin Üstad.
 ═══════════════════════════════════════════════════════════════════════
+
+ek: 
+
+═══════════════════════════════════════════════════════════════════════
+  EK BÖLÜM — TEŞHİS TESPİTLERİ VE GİT GÜNCELLEME (2026-10-09 öğleden sonra)
+═══════════════════════════════════════════════════════════════════════
+
+## EK-1. Git Durumu (Son Güncelleme)
+
+### Bugün Toplam 3 Commit
+02dda69 gitignore: raporlar ve teshis betigi haric tutuluyor
+9c7f7c1 v6 manifest eklendi + raporlar gitignore
+3124f19 v6: madde 3 + 1a + 1b tamamlandi
+a653cfb v5: model ayarlari + arayuz sadelestirme
+
+- Yerel = origin/main → SENKRON ✅
+- Working tree: TEMİZ ✅
+- Push akışı: a653cfb → 3124f19 → 9c7f7c1 → 02dda69
+
+→ Bu sayede raporlar ve teşhis betiği GitHub'a GİTMEZ.
+
+## EK-2. AI Mimari Teşhis Raporu — Özet
+
+### Betik
+- Dosya: AI_MIMARI_TESHIS_RAPORU.ps1 (12.4 KB, salt okunur)
+- Çıktı klasörü: raporlar\2026-10-10_AI_MIMARI\ (gitignore'da)
+- 5 çıktı: AI_MIMARI_RAPORU.txt, AI_AYAR_ENVANTERI.csv,
+  AI_GIT_DURUMU.txt, AI_CALISMA_DURUMU.txt, AI_DOSYA_LISTESI.txt
+
+### Tespit 1 — Sabit Kodlu Parametreler (KRİTİK, Madde 4 için)
+core/ollama_client.py satır 122-124'te HÂLÂ SABİT:
+
+
+Diğer ayarlar (temperature, num_ctx, KEEP_ALIVE) config'ten geliyor
+ama üç parametre koda gömülü. Madde 4'te bunlar config'e taşınacak.
+
+### Tespit 2 — Ollama Pasif
+Teşhis anında Ollama 11434 PASİF idi (Baslat.bat çalışmamış).
+AI Asistan kullanmadan önce Baslat.bat çalıştırılmalı.
+
+### Tespit 3 — AI Ayar Envanteri (71 satır, 5 dosya)
+- config.py            → ~13 satır (tanım)
+- core/ollama_client.py → ~28 satır (kullanım)
+- Baslat.bat           → ~15 satır (ortam değişkenleri)
+- app.py               → 3 satır
+- static/app.js        → ~8 satır (fallback rozeti)
+
+### Tespit 4 — config.py Ana Yapı (satır haritası)
+- 15: OLLAMA_HOST
+- 23: DEFAULT_MODEL
+- 26: DEFAULT_FALLBACK
+- 29: PRIMARY_MODELS
+- 37: FALLBACK_MODELS
+- 44: MODEL_CONTEXT_MAP
+- 53: MODEL_TEMP_MAP
+- 61: DEFAULT_NUM_CTX
+- 65: KEEP_ALIVE
+
+### Tespit 5 — ollama_client.py Fonksiyonları
+- 7-8:   import config
+- 12-14: _get_num_ctx(model)
+- 17-18: _get_temp(model)
+- 20:    warm_up(model)
+- 104:   chat_stream(...)
+- 116:   ollama.chat(...)
+- 122-124: top_p / top_k / repeat_penalty (SABİT — taşınacak)
+- 127:   keep_alive=KEEP_ALIVE
+
+### Tespit 6 — Çalışma Ortamı
+- Python 3.11.9 (sistem + venv uyumlu)
+- Flask 5050: AKTİF
+- Ollama 11434: teşhis anında PASİF
+- RAM: 31.6 GB toplam / 15.8 GB boş
+
+## EK-3. Madde 4 İçin Netleşmiş Kapsam
+
+Teşhis raporu ışığında Madde 4'ün 5 alt adımı:
+
+#### 4A) config.py'ye yeni MAP'ler
+- MODEL_TOP_P_MAP
+- MODEL_TOP_K_MAP
+- MODEL_REPEAT_PENALTY_MAP
+
+Önerilen varsayılanlar:
+
+nerilen varsayılanlar:
+qwen2.5:14b → top_p 0.90, top_k 40, rp 1.15
+qwen2.5:7b → top_p 0.90, top_k 40, rp 1.15
+qwen2.5:3b → top_p 0.95, top_k 50, rp 1.10
+llama3.1:latest → top_p 0.90, top_k 40, rp 1.10
+
+text
+
+#### 4B) ollama_client.py'ye fonksiyonlar
+- _get_top_p(model)
+- _get_top_k(model)
+- _get_repeat_penalty(model)
+- Sabit 0.9 / 40 / 1.15 → bu fonksiyonlardan beslenecek
+
+#### 4C) Strateji/Analiz profili
+- ANALIZ_TEMP_MAP (örn. 0.20-0.25)
+- "değerlendirme" / "strateji" / "plan" istekleri düşük temp kullanacak
+- Normal sohbet → MODEL_TEMP_MAP
+
+#### 4D) Sistem promptu güçlendirme
+- Değerlendirme + strateji önerileri için talimatlar
+- Adım adım düşünme (chain-of-thought ipuçları)
+- Aday bazlı öneri çıkarma
+- Rakip analizi / fırsat tespiti
+
+#### 4E) Frontend (opsiyonel)
+- Prompt şablonları dropdown:
+  "Değerlendir", "Strateji öner", "Randevu planla"
+- Her şablon farklı temp profili kullanabilir
+
+## EK-4. Kullanışlı Arama İpuçları (Madde 4 sırasında)
+
+Teşhis CSV'sinden hızlı referans:
+- "top_p" nerede?         → AI_AYAR_ENVANTERI.csv satır 40 (ollama_client.py:122)
+- "MODEL_TEMP_MAP" nerede? → CSV satır 10, 11 (config.py:51,53)
+- "_get_temp" nerede?      → CSV satır 21 (ollama_client.py:17)
+- "fallback" nerede?       → CSV 19 satır (app.js + ollama_client.py)
+
+Yani Madde 4'e başlarken bu CSV'yi açıp Ctrl+F ile arama yeterli.
+
+## EK-5. Sonraki Sohbet İçin Kısa Brief
+
+- Bugün (09.10.2026): 3 madde bitti + teşhis raporu + manifest + 3 commit
+- Yarın (10.10.2026): Madde 4 — AI temp + prompt strateji
+- Hedef: 4A → 4E sırasıyla
+- Yöntem: Yedek al → Ctrl+F bul-değiştir → Tarayıcı test → Gerekirse geri dön
+- Referans dosyaları:
+  * deep_ai_sohbet\deepseek_manifest_V6_20261009.txt (bu dosya)
+  * raporlar\2026-10-10_AI_MIMARI\AI_AYAR_ENVANTERI.csv
+  * raporlar\2026-10-10_AI_MIMARI\AI_MIMARI_RAPORU.txt
+----------------------------------------------------------------------------------
+Kontrol edilecek - ÖNEMLİ- : AI Modellerden doğru yanıt-öneri ve analiz almamız için ay süreçlerindeki yenileme vedeğişikliklerin system promptuna doğru enjekte edilmesi kontrol edilmeli
+═══════════════════════════════════════════════════════════════════════
+  Manifest v6 + EK BÖLÜM sonu
+  2026-10-09 — Kolay gelsin Üstad, yarın Madde 4.
+═══════════════════════════════════════════════════════════════════════
