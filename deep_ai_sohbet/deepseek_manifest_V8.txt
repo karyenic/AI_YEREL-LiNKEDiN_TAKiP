@@ -1,0 +1,637 @@
+═══════════════════════════════════════════════════════════════════════
+  AI_YEREL-LiNKEDiN_TAKiP — ÇALIŞMA MANİFESTİ v8 (REVİZE)
+  Tarih: 2026-10-10 (gece kapanışı)
+  Amaç: Sonraki sohbetin tüm süreci ve yeni kararları kavraması
+  Önceki manifest: v7 (2026-10-09 akşam)
+  Git son commit: 0f111c3  (Baslat.bat CONTEXT fix)
+  Bir önceki:     8b9d148  (4C-4)
+═══════════════════════════════════════════════════════════════════════
+
+## 1. PROJE KİMLİĞİ
+
+- Proje adı: AI_YEREL-LiNKEDiN_TAKiP
+- Yerel yol: C:\AI_YEREL\LiNKEDiN_TAKiP
+- GitHub: https://github.com/karyenic/AI_YEREL-LiNKEDiN_TAKiP
+- Branch: main
+- Amaç: LinkedIn aday takip programı (ATS benzeri)
+- Kullanıcı: Tek kişi (karyenic)
+- Kullanıcı profili: Kodlama bilgisi sınırlı — ADIM ADIM,
+  Ctrl+F yerine ARTIK BETİKLE çalışılır (Araçlar/ klasörü)
+- Donanım: Intel Arc 140V (16GB VRAM) + 32GB RAM + IPEX/SYCL
+
+## 2. TEKNOLOJİ YIĞINI
+
+- Backend: Flask
+- Frontend: Saf JS + CSS
+- DB: SQLite (linkedin_takip.db, sohbet_gecmisi.db) → WAL mode
+- AI: Ollama IPEX-LLM (C:\AI_IPEX\Ollama\portable\ollama.exe)
+- Python: 3.11+ (venv — TEK venv: venv/)
+- Port: 5050 (Flask), 11434 (Ollama)
+- Yedekler: BACKUP_ACIL_20261008_001411 (dokunulmuyor)
+
+## 3. AKTİF MODEL AYARLARI
+
+### Aktif Modeller
+- DEFAULT_MODEL = "qwen2.5:14b"
+- DEFAULT_FALLBACK = "qwen2.5:7b"
+- KEEP_ALIVE = "24h"
+- DEFAULT_NUM_CTX = 8192
+- PRIMARY_MODELS = [qwen2.5:14b, qwen2.5:7b, qwen2.5:3b, llama3.1:latest]
+
+### Model MAP'leri (config.py)
+- MODEL_CONTEXT_MAP        → num_ctx per model
+- MODEL_TEMP_MAP           → temperature per model
+- MODEL_TOP_P_MAP          → top_p
+- MODEL_TOP_K_MAP          → top_k
+- MODEL_REPEAT_PENALTY_MAP → repeat_penalty
+- MODEL_REPEAT_LAST_N_MAP  → repeat_last_n
+- ANALIZ_TEMP_MAP          → analiz profili (0.20-0.30)
+
+### TEK KAYNAK PRENSİBİ (4C ile tamamlandı)
+- _sistem_prompt() artık config.ADAY_STATULERI'ndan DİNAMİK üretiliyor
+- ADAY_STATULERI (7), OLAY_TIPLERI (7), STATU_GECIS_KURALLARI (4)
+- Statüler, olay tipleri, AI parametreleri → config.py TEK KAYNAK
+
+## 4. İŞ MANTIĞI (KRİTİK — v7'den AYNEN KORUNDU)
+
+### 4.1 BAŞLANGIÇ STATÜLERİ (3, manuel seçim)
+
+Aday listeye girerken kullanıcı 3 kategoriden birini seçer:
+
+**⚪ Değerlendirilecek**
+- Gözlem aşaması. Durum/mesaj/iletişim ile davranışı izlenir.
+- Yakın iletişim oluşursa → 🟢 Aktif'e alınır.
+- AI aday kartındaki süreçleri izler.
+
+**🟢 Aktif**
+- Aday ile iletişim gelişmiş, aksiyon planına hazır.
+- AI kartta izlemeye devam eder.
+
+**🔥 Sıcak**
+- Aday beklenen profili sergiliyor, beklemeden davet adımına geçilir.
+- AI karttan izler.
+
+### 4.2 OLAY TİPLERİ → STATÜ AKIŞI
+
+**📝 Not / Mesaj**
+- Adayla oluşan iletişim adımları not edilir.
+- Statü değişmez. AI için ipucu oluşturur.
+
+**📞 Davet Yapıldı**
+- Davetin sonucunda randevu yapılıp yapılmadığı AI tarafından izlenir.
+- 2 seçenek:
+  - **Randevu yapılamadıysa** → manuel statü değişir VEYA normal
+    erteleme ise → yeni randevu set edilir, not düşülür. AI izler.
+  - **Randevu oluştuysa** → Plan adımına geçilir.
+    Plan sonucu değerlendirilip statü değiştirilir.
+
+**📅 Plan (İş Sunumu) Yapıldı**
+- 2 sonuç:
+  - **Olumlu** → a) Kayıt işlemi (aday mezun olur, durum: 🎓 SG)
+              b) Takip (🔔 Takip)
+  - **Olumsuz** → a) Yumuşak hayır: ❄️ DeepFreeze
+                 b) Net hayır: ⛔ Blok
+
+**🤝 Takip Görüşmesi**
+- Plan anlatılmış kişi ile kayıt adımına gitmeyi amaçlayan
+  iletişim/görüşme süreci.
+- Takip yapıldıysa 4 sonuç:
+  - a) Yumuşak Hayır → ❄️ DeepFreeze
+  - b) Net Hayır → ⛔ Blok
+  - c) Kayıt yapılmıştır → 🎓 SG
+  - d) Takip yumuşak geçti, sonuç sonraya kaldı → 🔔 Takip devam. AI izler.
+
+**✅ Kayıt İşlemi**
+- Aday MEZUN olmuştur (serbest girişimci).
+- OTOMATİK 🎓 SG statüsüne alınır.
+- AI aday olarak izlemeyi BIRAKIR.
+- Aday listesinde satır bilgisinde 🎓 SG olarak görünür.
+
+**🔴 Hayır / Olumsuz**
+- Davet / randevu / plan sunumu adımları sonrası otomatik belirlenebilir
+  VEYA direkt işlenebilir.
+- Not olarak:
+  - Yumuşak → ❄️ DeepFreeze
+  - Net → ⛔ Blok
+- AI bunu izler.
+
+**🔄 Sadece Durum Değiştir (config: "Durum Değişikliği")**
+- Buraya MUTLAKA not girilerek manuel olarak statü değiştirilir.
+- AI nottan bilgi alır.
+- ⚠️ TUTARSIZLIK: candidates.py L102 "Sadece Durum Değiştir" diyor,
+  config.OLAY_TIPLERI "Durum Değişikliği" diyor → 4D'de düzeltilecek
+
+### 4.3 OTOMATİK GEÇİŞ KURALLARI (STATU_GECIS_KURALLARI)
+
+hayir>=1 → (manuel seçim gerekli) ❄️ veya ⛔
+plan=1 AND kayit=1 → 🎓 SG
+plan=1 AND kayit=0 → 🔔 Takip
+plan=0 AND davet=1 → 🟢 Aktif
+randevu_tarihi/saati doluysa → randevu=1 (bayrak)
+durum "Blok" içeriyorsa → blok=1 (kara liste)
+
+**4C-2 DÜZELTMESİ:** aday_durum_otomatik_guncelle artık DB'deki
+MEVCUT bayrakları da okuyor. Örn: aday önce plan=1 olduysa, sonra
+kayıt=1 gelirse → SG tetiklenir (eskiden plan=0 geldiği için
+tetiklenmezdi).
+
+### 4.4 ADAY LİSTESİ GÖRÜNÜMÜ
+
+Her satır:
+- **ID** (kayıt sırası)
+- **İsim** (LinkedIn URL varsa tıklanabilir link)
+- **Kayıt Tarihi**
+- **Açıklama** (son gelişme + durum ikonu)
+- **İşlem** (Sil butonu)
+
+**Bloklu adaylar (`blok=1`) ana listede GÖRÜNMEZ.**
+UI şu an `adaylar` tablosunu okuyor → 76 - 3 bloklu = 73 görünür.
+
+### 4.5 STATÜ SAYILARI
+- adaylar tablosu (kaynak): 76
+- bloklu (gizli): 3
+- UI'da görünen: 73
+- aday_profil: 79 (isimle eşleşiyor)
+
+## 5. v7'DE YAPILANLAR (2026-10-09)
+
+### 4C-1 — Sistem Promptu Dinamik ✅ (commit 92ac94f)
+- _statuleri_metne_cevir() helper eklendi
+- _sistem_prompt() artık ADAY_STATULERI'ndan üretiyor
+
+### 4C-BUG — Model whitelist ✅ (commit 92ac94f)
+- chat.py'de 'otomatik' model adı → DEFAULT_MODEL'a çevriliyor
+- PRIMARY_MODELS whitelist aktif
+- Kök neden: frontend "otomatik" gönderiyordu, backend olduğu gibi
+  Ollama'ya iletince "model not found" → 7b fallback
+
+### 4C-3 — Analiz Profili ✅ (commit e5661a5)
+- _get_temp(m, profil=None) → profil="analiz" ise ANALIZ_TEMP_MAP
+- chat_stream(..., profil=None) parametresi
+- chat.py → profil="analiz" gönderiyor
+- Etki: temp 0.35 → 0.20 (daha tutarlı analiz)
+
+### 4C-4 — Envanter Düzeltmeleri ✅ (commit 8b9d148)
+- metrics.py strateji çağrısı → profil="analiz" (temp 0.35→0.20)
+- app.py /api/ollama/warmup whitelist
+
+### DB Yetim Temizlik ✅
+- 188 yetim aday_profil silindi
+- 764 yetim aday_olaylari silindi
+- DB: 282 KB → 86 KB (-%70)
+- adaylar (76) KORUNDU
+- Yedek: linkedin_takip.db.bak_yetim_temizlik_20261009_234941
+
+### Baslat.bat CONTEXT Fix ✅ (commit 0f111c3)
+- set IPEX_LLM_NUM_CTX=8192
+- set OLLAMA_CONTEXT_LENGTH=8192
+- set SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1
+
+## 6. GPU / IPEX DURUMU (KRİTİK BİLGİ)
+
+### Görev Yöneticisi Testi (kanıtlı)
+- GPU: Intel Arc 140V, 18 GB VRAM
+- 14b model: 11.1 GB VRAM'de
+- Model çalışırken GPU Compute: %82-95
+- Idle: %2
+- CPU: %8 (sadece koordinasyon)
+
+### ollama ps YANILTICI (IPEX-LLM bug)
+- "100% CPU" → GERÇEK DEĞİL, GPU'da çalışıyor
+- "CONTEXT 0" → GERÇEK DEĞİL, num_ctx uygulanıyor
+- Gerçek test: Görev Yöneticisi → Performans → GPU
+
+### Performans Ölçümleri
+- Cold start (1. soru): 60 sn ilk token
+- Warm (2.+ sorular): 15 sn ilk token
+
+## 7. BİLİNEN SORUNLAR (v9'a taşınan)
+
+### 7.1 Excel Watcher Çok Sık Tetikleniyor
+- Flask terminal: "GET /api/excel/durum" saniyede bir
+- CPU/IO meşgul → AI yavaşlıyor
+- Çözüm: Sadece sistem açılışında yenileme
+
+### 7.2 Statü Toplamı Uyuşmuyor (KISMEN)
+- 75 aday var ama statü dağılımı 55 çıkıyor (önceki manifest)
+- DB temizlik sonrası: 76 aday, bazılarının durum'u boş
+- 4D (df_ozet statü-merkezli) çözecek
+
+### 7.3 14b Çince Sızıyor
+- 'tĩnh', '差距' gibi kelimeler
+- Neden: df_ozet bayrak-merkezli, model toplama yapıyor
+- Çözüm: 4D statü-merkezli özet
+
+### 7.4 DB İlişkisi (KISMEN ÇÖZÜLDÜ)
+- adaylar.id ≠ aday_profil.id
+- isim üzerinden eşleşiyor (TRIM'le)
+- Yetim kayıtlar temizlendi (952 kayıt)
+- İleride: aday_profil.id → adaylar.id migration
+
+### 7.5 Frontend Badge Güncellenmiyor
+- Kayıt sonrası adaylariYukle() çağrılmıyor
+- Sayfa yenilenince düzeliyor
+
+### 7.6 Sticky Header Kayboldu
+- Liste başlıkları scroll'da üstte kalmalıydı
+- static/style.css veya app.js'de position:sticky kaybolmuş
+
+### 7.7 static/app.js Model Listesi Hardcoded
+- L1160-1163: qwen2.5:14b, qwen2.5:7b, llama3.1, qwen2.5:3b
+- Sıra config'ten farklı
+- Çözüm: /api/models endpoint
+
+### 7.8 candidates.py "Sadece Durum Değiştir" Tutarsızlığı
+- L102: "Sadece Durum Değiştir"
+- config.OLAY_TIPLERI: "Durum Değişikliği"
+- 4D ile birlikte düzeltilecek
+
+## 8. CEBE ATILANLAR (sıradaki oturumlar için)
+
+| # | Konu | Detay | Öncelik |
+|---|------|-------|---------|
+| 1 | **Excel watcher** | Sadece açılışta yenileme (şu an sürekli) | Yüksek |
+| 2 | **Statü toplamı** | df_ozet bayrak-merkezli → statü-merkezli | 4D |
+| 3 | **14b Çince sızma** | df_ozet zenginleştirme | 4D |
+| 4 | **Baslat.bat SYCL** | ✅ TAMAM | Bitti |
+| 5 | **Sticky header** | Liste başlıkları scroll'da üstte kalsın | Orta |
+| 6 | **/api/models endpoint** | static/app.js hardcoded liste | Orta |
+| 7 | **DB eski adaylar** | KISMEN çözüldü (952 silindi) | İzle |
+| 8 | **frontend badge** | Kayıt sonrası adaylariYukle() | Düşük |
+| 9 | **candidates.py L102** | "Sadece Durum Değiştir" ↔ config "Durum Değişikliği" | 4D |
+
+## 9. v9'DA SIRADAKİ İŞLER
+
+### 4D — chat.py df_ozet Statü-Merkezli (ÖNCELİK 1)
+- Eski bayrak özeti KALDIRILACAK:
+  "TOPLAM ADAY: 75 / Davet: X / Randevu: Y / ..."
+- Yerine STATÜ-MERKEZLİ:
+  TOPLAM: 76 aday (bloklular hariç)
+  STATÜ DAĞILIMI:
+  ⚪ Değerlendirilecek: X
+  🟢 Aktif: X
+  🔥 Sıcak: X
+  🔔 Takip: X
+  🎓 SG: X
+  ❄️ DeepFreeze: X
+  (⛔ Blok: X - gizli)
+- UI ile birebir uyumlu
+- Çince sızma azalacak, sayılar tutacak
+- candidates.py L102 "Sadece Durum Değiştir" → "Durum Değişikliği"
+
+### Excel Watcher Optimizasyonu (ÖNCELİK 2)
+- watchdog event → sadece açılışta tara
+- İleride gerekirse manuel "Yenile" butonu
+
+### Sticky Header (ÖNCELİK 3)
+- style.css'de position: sticky; top: 0
+- Hangi element olduğunu tespit + geri getir
+
+### Madde 2 — Events Tablosu (uzun vade)
+- adaylar.id ↔ aday_profil.id migration
+- Cascade sil
+- Hatırlatmalar + Son Gelişmeler
+
+### Madde 5 — Takvim Sayfası
+- events tablosunu kullanır
+- /takvim rotası
+
+## 10. YENİ ARAÇLAR (Araçlar/ klasörü)
+
+- fix_4c1.py          → sistem promptu dinamik
+- fix_4c_bug_model.py → 'otomatik' model whitelist
+- fix_4c3.py          → analiz profili
+- fix_4c4.py          → metrics + app.py
+- db_envanter.py      → DB read-only tarama (v1)
+- db_envanter2.py     → TRIM'li tarama (v2)
+- db_temizle.py       → Yetim kayıt silme (yedekli, onaylı, "SIL" yazdırır)
+
+### Betik Standardı (v8'den itibaren ZORUNLU)
+- Self-contained Python betiği
+- Yedek alır (zaman damgalı)
+- Syntax (py_compile) + import test
+- Hata → OTOMATİK geri yükleme
+- Rapor basar: [OK] / [XX]
+- Kullanıcı sadece: python "Araçlar\fix_XXX.py"
+- Kritik silmeler: "SIL" onayı istenir
+
+## 11. ÇALIŞMA YÖNTEMİ VE PRATİKLERİMİZ
+
+### 11.1 Betik Standardı (v8'den sonra)
+- Elle Ctrl+F YOK → betikle
+- Her düzeltme = tek py betiği
+- Yedek + syntax + import test + otomatik geri
+- Kullanıcı "SIL" gibi onay yazar (kritik silmeler için)
+
+### 11.2 Değişiklik
+- Önce YEDEK (betik otomatik)
+- Tüm ID/sınıf/fonksiyon isimleri KORUNUR
+- Tek seferde tek fonksiyon
+- def satırlarına DOKUNMA
+
+### 11.3 Doğrulama
+- py_compile + import test
+- Flask restart (Baslat.bat)
+- Tarayıcı Ctrl+Shift+R
+- F12 konsol kontrol
+- Flask terminal kontrol
+
+### 11.4 Geri Dönüş
+- Her değişiklik öncesi yedek
+- DB için: .bak_yetim_temizlik_YYYYMMDD_HHMMSS
+
+### 11.5 Commit
+- git add <spesifik dosyalar>
+- git commit -m "vX: <kısa özet>"
+- git push origin main
+
+### 11.6 İletişim Tarzı
+- "Üstad" hitaplı, saygılı ama samimi
+- Adım adım, acele ettirmeden
+- Kodlama bilgisi sınırlı → jargondan kaçın
+- Manifest her oturum sonunda güncellenir
+
+### 11.7 Kanıta Dayalı Çalış
+- Tahmin değil, gözlem
+- ollama ps YANILTICI → Görev Yöneticisi
+- Flask terminal log'u = gerçek durum
+
+## 12. GIT RAPORU (2026-10-10 gece)
+
+### Bu Oturumdaki Commit'ler
+0f111c3 v7: Baslat.bat IPEX_LLM_NUM_CTX=8192 + OLLAMA_CONTEXT_LENGTH=8192
+8b9d148 v7 4C-4: metrics strateji profil=analiz + app.py warmup whitelist
+e5661a5 v7 4C-3: analiz profili - temp 0.35->0.20
+92ac94f v7 4C-1 + 4C-BUG: sistem promptu dinamik + model whitelist
+f67b712 v7 4C-2: aday_durum_otomatik_guncelle DB mevcut bayraklari da okuyor
+
+### Repo
+- URL: https://github.com/karyenic/AI_YEREL-LiNKEDiN_TAKiP
+- Branch: main
+- Sync: ✅ yerel = origin/main
+- Working tree: temiz (sadece Baslat.bat commit'lendi)
+
+## 13. ÖNEMLİ NOTLAR
+
+- ministral-3:14b ÇIKARILDI (template uyumsuzluğu)
+- BACKUP_ACIL_20261008_001411 klasörü DOKUNULMUYOR
+- LF→CRLF uyarısı zararsız (Windows normal)
+- KAPSUL_URET.ps1 (v1) ve KAPSUL_URET_v2.ps1 kişisel araç, git'te YOK
+- .env dosyası YOK (kod os.environ kullanmıyor)
+- Tek venv: venv/
+- Manifest dosyası her oturum sonunda kaydedilir
+
+## 14. SONRAKİ SOHBET İÇİN NOT
+
+Bu manifest v8, sonraki sohbetin tam olarak nerede kaldığımızı
+anlaması için yeterli. Sonraki sohbet:
+
+1. Bu manifesti okuyacak
+2. KAPSÜL_MADDE4_v2_20261009.txt'yi okuyacak (kodun tam hali)
+3. **4D** ile başlayacak (chat.py df_ozet statü-merkezli +
+   candidates.py "Sadece Durum Değiştir" → "Durum Değişikliği")
+4. Sonra **Excel watcher** optimizasyonu (açılışta tek sefer)
+5. Sonra **Sticky header** geri getirme
+6. Sonra **/api/models** endpoint (static/app.js hardcoded liste)
+7. Sonra **Madde 2** (events tablosu + DB ilişkisi migration)
+8. En son **Madde 5** (takvim)
+
+### KRİTİK HATIRLATMA
+Kullanıcının notu: "AI Modellerden doğru yanıt-öneri ve analiz
+almamız için ay süreçlerindeki yenileme ve değişikliklerin
+system promptuna doğru enjekte edilmesi kontrol edilmeli"
+
+Bu notun %95'i 4A+4B+4C'de tamamlandı.
+Kalan %5: 4D (statü-merkezli df_ozet).
+
+### KULLANICI BEKLENTİLERİ (v8'de sabitlendi)
+- Betikle çalış (elle Ctrl+F YOK)
+- İş mantığı manifest'te tam olmalı (bölüm 4)
+- Cebe atılanlar tablo halinde net olmalı (bölüm 8)
+- Kanıta dayalı: Tahmin değil gözlem
+
+
+═══════════════════════════════════════════════════════════════════════
+  EK BÖLÜM — TEKNİK NOTLAR (v8 teknik aktarım)
+  Amaç: Oturumlar arası kaybolmasın diye kod/araç tuzakları
+═══════════════════════════════════════════════════════════════════════
+
+## E1. BETİK YAZARKEN KAÇINILACAK TUZAKLAR
+
+### E1.1 PowerShell komutunu .py dosyasına yapıştırma
+- HATA: `.py` dosyasının ilk satırı `cd C:\...` olursa → SyntaxError
+- Neden: Python `cd`'yi kod sanar
+- KURAL: Kullanıcıya iki blok halinde ver:
+  * [PowerShell] `cd ...` + `python ...`
+  * [Python dosyası içeriği] `import re` ile başlar
+
+### E1.2 F-string içinde üç tırnak KULLANMA
+- HATA: `f"... {c.execute('''SELECT...''')} ..."` → SyntaxError
+- Neden: Python f-string içinde çok satırlı string parse etmez
+- ÇÖZÜM: Değişkeni önce hesapla, sonra f-string'e koy:
+  ```python
+  sonuc = c.execute("SELECT ...").fetchone()[0]
+  print(f"... {sonuc}")
+
+E1.3 Emoji karakterler — doğrudan değil, escape
+HATA: .py dosyasına doğrudan emoji yapıştır → bazı editörler bozar
+
+ÇÖZÜM: \u26aa (⚪), \U0001f7e2 (🟢), \u2744\ufe0f (❄️)
+
+Rapor satırlarında emoji yerine [OK] / [XX] kullan (Windows konsol mojibake önler)
+
+E1.4 Ctrl+F ile "bul ve değiştir" TEHLİKELİ
+Aynı blok 2+ kez geçebilir → yanlış yeri değiştirir
+
+ÇÖZÜM: Betik icerik.count(eski) > 1 kontrolü yapar → belirsizse DURUR
+
+KURAL: Elle değişiklik YASAK, betikle çalış
+
+E1.5 Dosya yolu — Türkçe karakter
+Araçlar\ klasörü Türkçe karakterli
+
+Python betiği Path(__file__).resolve().parent.parent ile üst klasörü bulur
+
+Subprocess çağrılarında cwd=PROJE_KOK ver (yoksa import hataları)
+
+E2. DB DAVRANIŞLARI
+E2.1 WAL Mode → Dosya Boyutu Görünmez
+DB WAL mode'da çalışıyor (linkedin_takip.db-wal, .db-shm dosyaları)
+
+DELETE + VACUUM sonrası bile .db dosyası KÜÇÜLMEZ
+
+Sebep: Silinen veri WAL'de, checkpoint yapılmamış
+
+ÇÖZÜM: Flask restart → WAL otomatik DB'ye yazılır → boyut düşer
+
+Kanıt: 282 KB → 86 KB (restart sonrası)
+
+E2.2 TRIM'li Karşılaştırma ŞART
+isim = "Burcu Kavasoğlu Bilgiç" (adaylar)
+
+isim = "Burcu Kavasoğlu Bilgiç " (aday_profil, sonda boşluk)
+
+SQL = eşleşmez → yanlışlıkla "yetim" sayılır
+
+ÇÖZÜM: TRIM(a.isim) = TRIM(p.isim) kullan
+
+Kanıt: Ham 216 yetim → TRIM'li 188 yetim (28 fark!)
+
+E2.3 id İlişkisi Kırık
+adaylar.id ≠ aday_profil.id
+
+İlişki isim üzerinden (TRIM'li)
+
+Kanıt: adaylar=76, aday_profil=79, eslesen=79
+
+İleride migration gerekli (Madde 2)
+
+E2.4 Yedek İsimlendirme
+.bak_yetim_temizlik_YYYYMMDD_HHMMSS
+
+.bak_mukerrer_temizlik
+
+.bak_v7_4c1_YYYYMMDD_HHMMSS
+
+Tüm yedekler .gitignore'da (git'e girmez)
+
+E3. FLASK / API DAVRANIŞLARI
+E3.1 Flask Restart ZORUNLU
+Kod değişikliği sonrası Baslat.bat kapat → yeniden aç
+
+Tarayıcıda Ctrl+Shift+R (sert yenile)
+
+F12 Console: kırmızı hata kontrol
+
+Flask terminal: traceback kontrol
+
+E3.2 Frontend "otomatik" Gönderiyor
+Chat UI model: "otomatik" string gönderiyordu
+
+Backend bunu Ollama'ya iletince "model not found" → 7b fallback
+
+ÇÖZÜM (4C-BUG): whitelist kontrolü → bilinmeyen adlar DEFAULT_MODEL'a
+
+Kanıt: [MODEL] Bilinmeyen model 'otomatik' -> 'qwen2.5:14b'
+
+E3.3 Metrik Sayfası Ayrı Yol
+routes/metrics.py'de ayrı chat_stream çağrısı var
+
+4C-3 chat.py'ye profil="analiz" ekledi ama metrics.py'ye unutmuştu
+
+4C-4 düzeltti
+
+KURAL: chat_stream çağrısı içeren TÜM dosyalar taranmalı
+→ Select-String -Path *.py -Pattern "chat_stream"
+
+E3.4 Excel Watcher Sürekli Tetikleniyor
+Flask log: "GET /api/excel/durum" saniyede bir
+
+CPU/IO meşgul → AI yavaşlıyor
+
+ÇÖZÜM (v9): Sadece açılışta tarama (watchdog event yerine)
+
+E4. GPU / IPEX-LLM NOTLARI
+E4.1 ollama ps YANILTICI (Bilinmeyen Bug)
+Sütun	ps gösteriyor	Gerçek
+PROCESSOR	100% CPU	GPU'da (Görev Yöneticisi: %82-95)
+CONTEXT	0	8192 uygulanıyor (KV cache kanıtı)
+Gerçek test 1: Görev Yöneticisi → GPU Compute
+
+Gerçek test 2: Aynı soruyu 2 kez sor → ilk token süresi farkı
+
+E4.2 Cold vs Warm Start
+soru (cold): 60 sn ilk token
+2.+ sorular (warm): 15 sn ilk token
+
+60 sn → panik yapma, normal
+
+E4.3 IPEX Ortam Değişkenleri (Baslat.bat)
+batch
+set OLLAMA_NUM_GPU=999
+set ONEAPI_DEVICE_SELECTOR=level_zero:0
+set ZES_ENABLE_SYSMAN=1
+set SYCL_CACHE_PERSISTENT=1
+set SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1
+set IPEX_LLM_NUM_CTX=8192
+set OLLAMA_CONTEXT_LENGTH=8192
+set OLLAMA_KEEP_ALIVE=24h
+set OLLAMA_MAX_LOADED_MODELS=1
+set OLLAMA_FLASH_ATTENTION=false
+E4.4 Ollama Yolu
+Kullanılan: C:\AI_IPEX\Ollama\portable\ollama.exe
+
+Baslat.bat taskkill ile eski instance'ı kapatır
+
+45 sn port bekleme timeout
+
+E5. KOD YAPISI / DOSYA HARİTASI
+Dosya	Rol
+app.py	Ana Flask (blueprint'leri register eder)
+config.py	TEK KAYNAK (statüler, olaylar, AI params)
+core/database.py	Tüm DB işlemleri
+core/ollama_client.py	AI çağrıları (_sistem_prompt, chat_stream)
+routes/chat.py	/api/chat/stream
+routes/candidates.py	/api/candidates/*
+routes/metrics.py	Strateji sayfası (chat_stream çağrısı)
+routes/excel.py	Excel içe aktarma
+static/app.js	Frontend (model listesi L1160-1163 HARDCODED)
+E6. KANIT TOPLAMA YÖNTEMLERİ
+E6.1 PowerShell hedefli arama
+powershell
+Select-String -Path <dosya> -Pattern "<regex>"
+Get-Content <dosya> -Encoding UTF8 | Select-Object -Skip X -First Y
+E6.2 Flask terminal okuma
+Renk kodları vardır: [OK] yeşil, [XX] kırmızı
+
+Traceback varsa kırmızı → önemli
+
+qwen2.5:14b cagriliyor (num_ctx: 8192, temp: 0.2) → gerçek durum
+
+E6.3 Frontend API testi
+F12 Console:
+
+js
+fetch('/api/candidates').then(r => r.json()).then(d => console.log('UI:', d.length));
+E6.4 DB envanteri
+Araçlar\db_envanter2.py (TRIM'li) → read-only, hiçbir şey silmez
+
+E7. KULLANICI İLETİŞİM PRENSİPLERİ
+"Üstad" hitabı
+
+Adım adım, uzun bloklar halinde değil
+
+Her değişiklik sonrası "anlaşıldı mı?" onayı
+
+Kodlama bilgisi sınırlı → teknik jargondan kaçın
+
+Kullanıcı haklıysa HEMEN kabul et, savunma yapma
+
+Betik isteği gelirse bir daha elle Ctrl+F önerme
+
+Tahmin yürütme — kanıt iste ve göster
+
+Kullanıcının "cebe at" dediği şeyleri manifest'e YAZ
+
+E8. BUGÜN BENİM YAPTIĞIM HATALAR (dersler)
+db_envanter.py'de f-string içinde ''' kullandım → SyntaxError
+→ Ders: f-string'te çok satırlı SQL kullanma
+
+Manifest v8 ilk taslakta İş Mantığı bölümünü atladım → kullanıcı uyardı
+→ Ders: v7'deki her bölümü v8'e taşı, sadece güncelle
+
+Chat.py commit'inin yapıldığını doğrulamadım → 2 kez sordum
+→ Ders: git log ile önce doğrula, sonra commit iste
+
+Frontend "otomatik" gönderiyor — bunu baştan taramalıydım
+→ Ders: ilk sorunda frontend'in ne gönderdiğini kontrol et
+
+Windows'ta emoji/UTF-8 tuzağı — baştan escape kullanmalıydım
+→ Ders: Türkçe karakterli Windows'ta \uXXXX escape standart
+
+═══════════════════════════════════════════════════════════════════════
+Manifest v8 (REVİZE) sonu — 2026-10-10 gece kapanışı
+Bugün: 4C-1 + 4C-BUG + 4C-3 + 4C-4 + DB temizlik + CONTEXT fix
+Yarın: 4D (df_ozet statü-merkezli) + Excel watcher + Sticky header
+Kolay gelsin Üstad.
+═══════════════════════════════════════════════════════════════════════
