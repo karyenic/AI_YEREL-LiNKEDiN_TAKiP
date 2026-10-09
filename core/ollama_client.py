@@ -5,7 +5,9 @@ import psutil
 
 
 from config import (MODEL_CONTEXT_MAP, MODEL_TEMP_MAP, DEFAULT_NUM_CTX,
-                    KEEP_ALIVE, DEFAULT_MODEL, DEFAULT_FALLBACK)
+                    KEEP_ALIVE, DEFAULT_MODEL, DEFAULT_FALLBACK,
+                    MODEL_TOP_P_MAP, MODEL_TOP_K_MAP,
+                    MODEL_REPEAT_PENALTY_MAP, MODEL_REPEAT_LAST_N_MAP)
 
 _warmed_models = set()
 
@@ -16,6 +18,22 @@ def _get_num_ctx(model_adi):
 def _get_temp(model_adi):
     """Model bazli temperature dondurur."""
     return MODEL_TEMP_MAP.get(model_adi, 0.5)
+
+def _get_top_p(model_adi):
+    """Model bazli top_p dondurur."""
+    return MODEL_TOP_P_MAP.get(model_adi, 0.9)
+
+def _get_top_k(model_adi):
+    """Model bazli top_k dondurur."""
+    return MODEL_TOP_K_MAP.get(model_adi, 40)
+
+def _get_repeat_penalty(model_adi):
+    """Model bazli repeat_penalty dondurur."""
+    return MODEL_REPEAT_PENALTY_MAP.get(model_adi, 1.15)
+
+def _get_repeat_last_n(model_adi):
+    """Model bazli repeat_last_n dondurur."""
+    return MODEL_REPEAT_LAST_N_MAP.get(model_adi, 256)
 
 def warm_up(model_adi=DEFAULT_MODEL):
     """Modeli VRAM e yukler. Uygulama acilisinda bir kere cagrilir."""
@@ -119,10 +137,10 @@ def chat_stream(mesajlar, model=DEFAULT_MODEL, fallback=DEFAULT_FALLBACK, durum=
             options={
                 "num_ctx": num_ctx,
                 "temperature": sicaklik,
-                "top_p": 0.9,
-                "top_k": 40,
-                "repeat_penalty": 1.15,
-                "repeat_last_n": 256,
+                "top_p": _get_top_p(m),
+                "top_k": _get_top_k(m),
+                "repeat_penalty": _get_repeat_penalty(m),
+                "repeat_last_n": _get_repeat_last_n(m),
             },
             keep_alive=KEEP_ALIVE,
             stream=True
