@@ -1,0 +1,248 @@
+═══════════════════════════════════════════════════════════════════════
+  AI_YEREL-LiNKEDiN_TAKiP — ÇALIŞMA MANİFESTİ v6
+  Tarih: 2026-10-09 (gece kapanışı)
+  Amaç: Sonraki sohbetin tüm süreci ve yeni kararları kavraması
+  Önceki manifest: v5 (2026-10-08 akşam)
+  Git son commit: 3124f19  (v6, 2026-10-09)
+  Bir önceki:     a653cfb  (v5, 2026-10-08)
+═══════════════════════════════════════════════════════════════════════
+
+## 1. PROJE KİMLİĞİ
+
+- Proje adı: AI_YEREL-LiNKEDiN_TAKiP
+- Yerel yol: C:\AI_YEREL\LiNKEDiN_TAKiP
+- GitHub: https://github.com/karyenic/AI_YEREL-LiNKEDiN_TAKiP
+- Branch: main
+- Amaç: LinkedIn aday takip programı (ATS benzeri)
+- Kullanıcı: Tek kişi (karyenic)
+- Kullanıcı profili: Kodlama bilgisi sınırlı — ADIM ADIM,
+  Ctrl+F ile "bul ve değiştir" talimatları ile çalışılmalı.
+  Tam yol verilmeli. Yapıştırma kayıpları olabilir → her
+  büyük değişiklik sonrası doğrulama iste.
+- Donanım: Intel Arc 140V (16GB) + 32GB RAM + IPEX/SYCL
+
+## 2. TEKNOLOJİ YIĞINI
+
+- Backend: Flask
+- Frontend: Saf JS + CSS
+- DB: SQLite (linkedin_takip.db, sohbet_gecmisi.db)
+  → WAL mode aktif
+- AI: Ollama + IPEX-LLM
+- Python: 3.11+ (venv)
+- Port: 5050 (Flask), 11434 (Ollama)
+- Yedekler: BACKUP_ACIL_20261008_001411 (dokunulmuyor)
+
+## 3. AKTİF MODEL AYARLARI (v5'ten devam — KİLİTLİ)
+
+### Aktif Modeller
+- DEFAULT_MODEL = "qwen2.5:14b"     ← kaliteli cevap (ana)
+- DEFAULT_FALLBACK = "qwen2.5:7b"   ← hızlı, stabil (fallback)
+- KEEP_ALIVE = "24h"                 ← VRAM'de kalır
+- DEFAULT_NUM_CTX = 8192
+
+### MODEL_CONTEXT_MAP
+- qwen2.5:14b     → 8192
+- qwen2.5:7b      → 8192
+- qwen2.5:3b      → 4096
+- llama3.1:latest → 8192
+
+### MODEL_TEMP_MAP
+- qwen2.5:14b     → 0.35
+- qwen2.5:7b      → 0.45
+- qwen2.5:3b      → 0.40
+- llama3.1:latest → 0.50
+
+### PRIMARY_MODELS (frontend dropdown)
+- qwen2.5:14b, qwen2.5:7b, qwen2.5-coder:14b,
+  llama3.1:latest, qwen2.5:3b
+- NOT: ministral-3:14b ÇIKARILDI (template uyumsuzluğu — currentDate)
+
+### Baslat.bat — Ollama env
+- OLLAMA_KEEP_ALIVE=24h    (2 yerde, satır 11 ve 43)
+- OLLAMA_EXE=C:\AI_IPEX\Ollama\portable\ollama.exe
+- OLLAMA_NUM_GPU=999
+- OLLAMA_HOST=127.0.0.1:11434
+- OLLAMA_NUM_PARALLEL=1
+- OLLAMA_MAX_LOADED_MODELS=1
+- OLLAMA_FLASH_ATTENTION=false
+
+### ollama_client.py — kritik entegrasyon
+- from config import (MODEL_CONTEXT_MAP, MODEL_TEMP_MAP, DEFAULT_NUM_CTX,
+                     KEEP_ALIVE, DEFAULT_MODEL, DEFAULT_FALLBACK)
+- _get_num_ctx(model) → MODEL_CONTEXT_MAP.get(...)
+- _get_temp(model)    → MODEL_TEMP_MAP.get(..., 0.5)
+- ollama.chat(...) options artık config'ten beslenir
+- Sabit kodlu "temperature: 0.7" KALDIRILDI
+
+## 4. v6'da YAPILANLAR (2026-10-09)
+
+### Madde 3 — Placeholder + Alt Yazı İyileştirmesi  ✅
+Dosya: static/style.css
+- Yeni renk değişkeni: --text-soft
+  - Koyu tema: #b1bac4
+  - Açık tema: #3f4a58
+- --text-muted KORUNDU (soluk ton, eski yerlerde kullanılıyor)
+- .report-card-subtitle  → 13.5px, --text-soft, weight 500
+- .metric-card .lbl      → 13.5px, --text-soft, weight 500 (2 blok)
+- .metric-hint           → 11.5px, --text-soft, opacity 1
+- .report-badge          → 10.5px, --text-soft
+- .report-empty span     → 13.5px, --text-soft
+- .journal-textarea::placeholder → --text-soft, italik
+- YENİ: global ::placeholder bloğu (input/textarea/select hepsi italik)
+
+### Madde 1a — Sütun Genişliği Ayarlama (v2)  ✅
+Dosya: static/style.css + static/app.js
+- Tablo: #aday-tablo (5 sütun)
+- Tutamaç 12px genişlik (kolay yakalanır)
+- Görsel şerit ortada 2px (mavi)
+- Event delegation: tek document listener
+  → tutamaç yeniden render edilse de çalışır
+- MutationObserver: thead değişirse tutamaçları yeniler
+- Çift tıkla → sütun sıfırlanır
+- localStorage: "aday_tablo_kolon_genislik_v1"
+  → sayfa yenilenince ayarlar korunur
+- NOT: v1 tutamaçları sadece 1 kez çalışıyordu (thead yenilenince
+  listener kopuyordu). v2 delegation ile bu düzeltildi.
+
+### Madde 1b — Yeni Aday Ekle + Aday Listesi Başlığı  ✅
+Dosya: templates/index.html + static/style.css
+- Yeni form düzeni (grid, 6 kolon):
+  Satır 1: [İsim*] [URL] [Statü ▼] [Ekle] [Keepten] [Excelden]
+  Satır 2: [Açıklama — tam genişlik]
+- ID'ler korundu: #isim, #aciklama, #linkedin-url,
+  #yeni-aday-durum
+  → JS fonksiyonları bozulmadı
+- Aday Listesi başlığı: flex, solda h2, sağda arama
+- Arama kutusu 260px, dar
+- 💡 ipucu metni arama kutusunun yanında
+- Mobil için 2 media query (900px ve 560px)
+- CSS: .yeni-aday-grid, .aday-listesi-header,
+       .aday-listesi-arac, .aday-ara-hint
+
+## 5. YARIN SIRADAKİ İŞLER
+
+### Madde 4 — AI temp + prompt strateji ayarı (FAZ 1 son)
+- config.py: MODEL_TEMP_MAP tekrar gözden geçirilecek
+- Belki "analiz" için ayrı temp profili (0.25?) eklenebilir
+- Sistem promptu güçlendirilecek:
+  - Değerlendirme ve strateji önerileri üretmesi için
+  - Daha derin düşünme zinciri (chain-of-thought ipuçları)
+  - Adım adım plan çıkarma yeteneği
+- Frontend: AI Asistan sayfasında prompt şablonları
+- Amaç: AI'nin sadece sohbet değil, stratejik danışman
+  gibi davranması
+
+### Madde 2 — Hatırlatmalar + Son Gelişmeler (FAZ 2)
+- YENİ: events tablosu (SQLite)
+  Kolonlar: id, aday_id, tip, tarih, durum, not
+  tip: gorusme | not | randevu | durum_degisikligi
+  durum: bekliyor | tamam | iptal
+- Raporlama sayfasındaki "Hatırlatmalar" bu tablodan beslenecek
+- "Son Gelişmeler" bu tablodan beslenecek
+- Mevcut boş kartlar dolmaya başlayacak
+
+### Madde 5 — Takvim Sayfası (FAZ 3)
+- Yeni sayfa: /takvim
+- events tablosunu kullanır (sıfırdan başlamaz)
+- Basit ay görünümü veya liste + tarih filtresi
+- Randevu bildirimleri (tarayıcı notification opsiyonel)
+
+## 6. ÇALIŞMA YÖNTEMİ VE PRATİKLERİMİZ
+
+### 6.1. Keşif Aşaması
+- Önce PowerShell ile hedefli arama:
+  Select-String -Path <dosya> -Pattern "<regex>" |
+    Select-Object LineNumber, Line
+- Belirli satır aralığı gösterme:
+  Get-Content <dosya> | Select-Object -Skip X -First Y |
+    ForEach-Object -Begin {$i=X+1} -Process { "{0,4}: {1}" -f $i, $_; $i++ }
+- TÜM dosyayı yapıştırmak yerine, sadece gerekli satırlar
+
+### 6.2. Değişiklik Aşaması
+- Önce YEDEK:
+  Copy-Item <dosya> <dosya>.bak_v5_YYYYMMDD[_madde]
+- Ctrl+F ile "bul ve değiştir" talimatı (tam blok halinde)
+- Tüm ID / sınıf / fonksiyon isimleri KORUNUR
+- Her adım için tek tek "bul" ve "değiştir" metni verilir
+
+### 6.3. Doğrulama Aşaması
+- Tarayıcıda Ctrl + F5 (hard refresh)
+- F12 konsolu: kırmızı hata var mı?
+- Flask terminalinde kırmızı traceback var mı?
+- Görsel kontrol: ekran görüntüsü paylaşılır
+
+### 6.4. Geri Dönüş
+- Her değişiklik öncesi yedek alınır
+- Sorun olursa:
+  Copy-Item <dosya>.bak_v5_... <dosya> -Force
+- 1 saniyede eski haline döner
+
+### 6.5. Commit Aşaması
+- git status → değişenleri gör
+- git add <spesifik dosyalar> (yedekler .gitignore'da)
+- git commit -m "v6: <kısa özet>"
+- git push origin main
+
+### 6.6. Yedek İsimlendirme Kuralı
+- .bak_v5_YYYYMMDD           → sürüm öncesi temiz yedek
+- .bak_v5_YYYYMMDD_<madde>   → belirli madde öncesi yedek
+- .bak_1a_v1                 → iterasyon yedekleri
+
+### 6.7. İletişim Tarzı
+- "Üstad" hitaplı, saygılı ama samimi
+- Adım adım, acele ettirmeden
+- Kodlama bilgisi sınırlı → jargondan kaçın
+- Her büyük değişiklik sonrası "anlaşıldı mı?" onayı al
+- Manifest her oturum sonunda güncellenir
+
+## 7. GIT RAPORU
+
+### Bugünkü Commit
+- Hash:      3124f19
+- Mesaj:     "v6: madde 3 (placeholder+alt yazi) + 1a (sutun resize v2)
+              + 1b (form duzeni) tamamlandi"
+- Değişen:   4 dosya
+- +402 / -43 satır
+- Push:      a653cfb..3124f19  main -> main  ✅
+
+### Önceki Commit
+- Hash:      a653cfb  (v5, 2026-10-08)
+- Önceki:    8b4456e
+
+### Repo
+- URL:       https://github.com/karyenic/AI_YEREL-LiNKEDiN_TAKiP
+- Branch:    main
+- Sync:      ✅ yerel = origin/main
+
+### Yedekler (git'te YOK, .gitignore'da)
+- static/style.css.bak_v5_20261009
+- static/style.css.bak_v5_20261009_1a
+- static/app.js.bak_v5_20261009
+- static/app.js.bak_1a_v1
+- static/style.css.bak_1a_v1
+- templates/index.html.bak_1b_v1
+
+## 8. ÖNEMLİ NOTLAR
+
+- ministral-3:14b ÇIKARILDI (template uyumsuzluğu — currentDate)
+- BACKUP_ACIL_20261008_001411 klasörü DOKUNULMUYOR
+- LF→CRLF uyarısı zararsız (Windows normal)
+- v6'da models/model temp KİLİTLİ — Madde 4'te gözden geçirilecek
+- deep_ai_sohbet/ klasörü manifest arşivi (v5 buraya eklendi)
+- Manifest dosyası her oturum sonunda kaydedilir
+
+## 9. SONRAKİ SOHBET İÇİN NOT
+
+Bu manifest v6, sonraki sohbetin tam olarak nerede kaldığımızı
+anlaması için yeterli. Sonraki sohbet:
+
+1. Bu manifesti okuyacak
+2. Madde 4 (AI temp + prompt strateji) ile başlayacak
+3. Aynı çalışma yöntemini (yedek + Ctrl+F + test) uygulayacak
+4. Madde 4 bitince Madde 2'ye (events tablosu) geçilecek
+5. En son Madde 5 (takvim) yapılacak
+
+═══════════════════════════════════════════════════════════════════════
+  Manifest v6 sonu — 2026-10-09 gece kapanışı
+  Yarın taze kafayla devam. Kolay gelsin Üstad.
+═══════════════════════════════════════════════════════════════════════
