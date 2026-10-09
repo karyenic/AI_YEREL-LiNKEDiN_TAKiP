@@ -1,6 +1,15 @@
 import sqlite3
 from datetime import datetime
-from config import ADAY_DB, CHAT_DB
+from config import ADAY_DB, CHAT_DB, ADAY_STATULERI
+
+
+def _statu_adi(kod):
+    """config.ADAY_STATULERI'ndan tam statu string'ini dondurur.
+    Ornek: _statu_adi('sg') -> '🎓 SG'"""
+    for s in ADAY_STATULERI:
+        if s["kod"] == kod:
+            return s["tam"]
+    return kod  # bulunamazsa kodu oldugu gibi don
 
 
 
@@ -866,11 +875,11 @@ def aday_durum_otomatik_guncelle(aday_id, davet=0, plan=0, kayit=0, hayir=0):
     if hayir == 1:
         return False  # Manuel secim gerekli (DeepFreeze veya Blok), otomatik atama yapilmaz
     if plan == 1 and kayit == 1:
-        yeni_durum = "🎓 SG"
+        yeni_durum = _statu_adi("sg")
     elif plan == 1 and kayit == 0:
-        yeni_durum = "🔔 Takip"
+        yeni_durum = _statu_adi("takip")
     elif plan == 0 and davet == 1:
-        yeni_durum = "🟢 Aktif"  # Davet var ama plan yok
+        yeni_durum = _statu_adi("aktif")  # Davet var ama plan yokk
     else:
         return False  # Statu degismedi
     
