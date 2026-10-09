@@ -8,7 +8,7 @@ from config import (MODEL_CONTEXT_MAP, MODEL_TEMP_MAP, DEFAULT_NUM_CTX,
                     KEEP_ALIVE, DEFAULT_MODEL, DEFAULT_FALLBACK,
                     MODEL_TOP_P_MAP, MODEL_TOP_K_MAP,
                     MODEL_REPEAT_PENALTY_MAP, MODEL_REPEAT_LAST_N_MAP,
-                    ADAY_STATULERI)
+                    ADAY_STATULERI, ANALIZ_TEMP_MAP)
 
 _warmed_models = set()
 
@@ -16,8 +16,14 @@ def _get_num_ctx(model_adi):
     """Model bazli akilli num_ctx dondurur."""
     return MODEL_CONTEXT_MAP.get(model_adi, DEFAULT_NUM_CTX)
 
-def _get_temp(model_adi):
-    """Model bazli temperature dondurur."""
+def _get_temp(model_adi, profil=None):
+    """Model bazli temperature dondurur.
+
+    profil="analiz" ise ANALIZ_TEMP_MAP (dusuk temp: tutarli analiz),
+    aksi halde MODEL_TEMP_MAP kullanilir.
+    """
+    if profil == "analiz":
+        return ANALIZ_TEMP_MAP.get(model_adi, MODEL_TEMP_MAP.get(model_adi, 0.5))
     return MODEL_TEMP_MAP.get(model_adi, 0.5)
 
 def _get_top_p(model_adi):
@@ -126,17 +132,21 @@ Aksiyon: [Somut, tarihli öneri]
 6. NO STATISTICS PADDING: If user asks a simple count, answer with the count only."""
 
 
-def chat_stream(mesajlar, model=DEFAULT_MODEL, fallback=DEFAULT_FALLBACK, durum=None):
-    """Generator: Ollama dan gelen chunk lari yield eder. Fallback li."""
+def chat_stream(mesajlar, model=DEFAULT_MODEL, fallback=DEFAULT_FALLBACK, durum=None, profil=None):
+    """Generator: Ollama dan gelen chunk lari yield eder. Fallback li.
+
+    profil: "analiz" -> dusuk temperature (ANALIZ_TEMP_MAP)
+    """
     if durum is None:
         durum = {}
     durum["model"] = model
     durum["fallback"] = False
+    durum["profil"] = profil
 
     def _deneme(m):
         t0 = time.time()
         num_ctx = _get_num_ctx(m)
-        sicaklik = _get_temp(m)
+        sicaklik = _get_temp(m, profil)
         print(f"{m} cagriliyor (num_ctx: {num_ctx}, temp: {sicaklik})...")
         full = ollama.chat(
             model=m,

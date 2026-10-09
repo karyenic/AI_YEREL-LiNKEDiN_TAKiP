@@ -111,7 +111,7 @@ def stream():
         try:
             # Router: soru tipine gore model sec
             model_secili = model if model else DEFAULT_MODEL  # Frontend'den gelen veya default
-            for parca in chat_stream(ollama_msgs, model=model_secili, fallback=fallback, durum=durum):
+            for parca in chat_stream(ollama_msgs, model=model_secili, fallback=fallback, durum=durum, profil="analiz"):
                 toplam_yanit += parca
                 yield f"data: {json.dumps({'t': parca}, ensure_ascii=False)}\n\n"
             yield f"data: {json.dumps({'done': True, 'model': durum.get('model'), 'fallback': durum.get('fallback', False)}, ensure_ascii=False)}\n\n"
