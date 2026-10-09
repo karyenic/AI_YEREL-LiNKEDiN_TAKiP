@@ -1,0 +1,465 @@
+
+
+═══════════════════════════════════════════════════════════════════════
+  AI_YEREL-LiNKEDiN_TAKiP — ÇALIŞMA MANİFESTİ v7
+  Tarih: 2026-10-09 (akşam kapanışı)
+  Amaç: Sonraki sohbetin tüm süreci ve yeni kararları kavraması
+  Önceki manifest: v6 (2026-10-09 sabah)
+  Git son commit: c9e2ee6  (v6 fix, 2026-10-09)
+  Bir önceki:     df8453f  (v6 madde4b)
+═══════════════════════════════════════════════════════════════════════
+
+## 1. PROJE KİMLİĞİ
+
+- Proje adı: AI_YEREL-LiNKEDiN_TAKiP
+- Yerel yol: C:\AI_YEREL\LiNKEDiN_TAKiP
+- GitHub: https://github.com/karyenic/AI_YEREL-LiNKEDiN_TAKiP
+- Branch: main
+- Amaç: LinkedIn aday takip programı (ATS benzeri)
+- Kullanıcı: Tek kişi (karyenic)
+- Kullanıcı profili: Kodlama bilgisi sınırlı — ADIM ADIM,
+  Ctrl+F ile "bul ve değiştir" talimatları ile çalışılmalı.
+- Donanım: Intel Arc 140V (16GB) + 32GB RAM + IPEX/SYCL
+
+## 2. TEKNOLOJİ YIĞINI
+
+- Backend: Flask
+- Frontend: Saf JS + CSS
+- DB: SQLite (linkedin_takip.db, sohbet_gecmisi.db) → WAL mode
+- AI: Ollama + IPEX-LLM
+- Python: 3.11+ (venv)
+- Port: 5050 (Flask), 11434 (Ollama)
+- Yedekler: BACKUP_ACIL_20261008_001411 (dokunulmuyor)
+
+## 3. AKTİF MODEL AYARLARI
+
+### Aktif Modeller
+- DEFAULT_MODEL = "qwen2.5:14b"
+- DEFAULT_FALLBACK = "qwen2.5:7b"
+- KEEP_ALIVE = "24h"
+- DEFAULT_NUM_CTX = 8192
+
+### Model MAP'leri (config.py)
+- MODEL_CONTEXT_MAP      → num_ctx per model
+- MODEL_TEMP_MAP         → temperature per model
+- MODEL_TOP_P_MAP        → YENİ (4B-1)
+- MODEL_TOP_K_MAP        → YENİ (4B-1)
+- MODEL_REPEAT_PENALTY_MAP → YENİ (4B-1)
+- MODEL_REPEAT_LAST_N_MAP → YENİ (4B-1)
+- ANALIZ_TEMP_MAP        → YENİ (düşük temp: 0.20-0.30)
+
+### ollama_client.py
+- _get_num_ctx(model)   → MODEL_CONTEXT_MAP
+- _get_temp(model)      → MODEL_TEMP_MAP
+- _get_top_p(model)     → YENİ
+- _get_top_k(model)     → YENİ
+- _get_repeat_penalty(model) → YENİ
+- _get_repeat_last_n(model)  → YENİ
+- Sabit 0.9/40/1.15/256 KALDIRILDI → config'ten besleniyor
+
+## 4. TEK KAYNAK PRENSİBİ (v7'nin kalbi)
+
+Statüler, olay tipleri ve AI parametreleri artık config.py'de TEK KAYNAK:
+
+### ADAY_STATULERI (7 kayıt)
+⚪ Değerlendirilecek (on_tespit)
+🟢 Aktif (on_tespit)
+🔥 Sıcak (on_tespit)
+🔔 Takip (sonuc)
+🎓 SG (sonuc)
+❄️ DeepFreeze (sonuc)
+⛔ Blok (sonuc)
+
+
+### OLAY_TIPLERI (7 kayıt)
+Not → bayrak: None
+Davet → bayrak: davet
+Plan → bayrak: plan
+Takip Görüşmesi → bayrak: takip
+Kayıt → bayrak: kayit
+Hayır → bayrak: hayir
+Durum Değişikliği → bayrak: None
+
+
+### STATU_GECIS_KURALLARI (config'te referans)
+hayir>=1 → deepfreeze
+plan=1 AND kayit=1 → sg
+plan=1 AND kayit=0 → takip
+plan=0 AND davet=1 → aktif
+
+
+### Faydası
+- UI dropdown'ları, sistem promptu, DB geçişleri hep aynı kaynaktan
+- Yarın yeni statü eklenince → 1 satır config + restart = her yere yansır
+- Sistem promptu otomatik güncellenir (4C'de yapılacak)
+
+## 5. İŞ MANTIĞI (DETAYLI - YENİ)
+
+### 5.1 BAŞLANGIÇ STATÜLERİ (3, manuel seçim)
+
+Aday listeye girerken kullanıcı 3 kategoriden birini seçer:
+
+**⚪ Değerlendirilecek**
+- Gözlem aşaması. Durum/mesaj/iletişim ile davranışı izlenir.
+- Yakın iletişim oluşursa → 🟢 Aktif'e alınır.
+- AI aday kartındaki süreçleri izler.
+
+**🟢 Aktif**
+- Aday ile iletişim gelişmiş, aksiyon planına hazır.
+- AI kartta izlemeye devam eder.
+
+**🔥 Sıcak**
+- Aday beklenen profili sergiliyor, beklemeden davet adımına geçilir.
+- AI karttan izler.
+
+### 5.2 OLAY TİPLERİ → STATÜ AKIŞI
+
+**📝 Not / Mesaj**
+- Adayla oluşan iletişim adımları not edilir.
+- Statü değişmez.
+- AI için ipucu oluşturur.
+
+**📞 Davet Yapıldı**
+- Davetin sonucunda randevu yapılıp yapılmadığı AI tarafından izlenir.
+- 2 seçenek:
+  - **Randevu yapılamadıysa** → manuel statü değişir
+    VEYA normal erteleme ise → yeni randevu set edilir, not düşülür.
+    AI izler.
+  - **Randevu oluştuysa** → Plan adımına geçilir.
+    Plan sonucu değerlendirilip statü değiştirilir.
+
+**📅 Plan (İş Sunum) Yapıldı**
+- 2 sonuç:
+  - **Olumlu** → a) Kayıt işlemi (aday mezun olur, durum: 🎓 SG)
+              b) Takip (🔔 Takip)
+  - **Olumsuz** → a) Yumuşak hayır: ❄️ DeepFreeze
+                 b) Net hayır: ⛔ Blok
+
+**🤝 Takip Görüşmesi**
+- Plan anlatılmış kişi ile kayıt adımına gitmeyi amaçlayan
+  iletişim/görüşme süreci.
+- Takip yapıldıysa 3 sonuç:
+  - a) Yumuşak Hayır → ❄️ DeepFreeze
+  - b) Net Hayır → ⛔ Blok
+  - c) Kayıt yapılmıştır → 🎓 SG
+  - d) Takip yumuşak geçti, sonuç sonraya kaldı → 🔔 Takip devam.
+    AI izler.
+
+**✅ Kayıt İşlemi**
+- Aday MEZUN olmuştur (serbest girişimci).
+- OTOMATİK 🎓 SG statüsüne alınır.
+- AI aday olarak izlemeyi BIRAKIR.
+- Aday listesinde satır bilgisinde 🎓 SG olarak görünür.
+
+**🔴 Hayır / Olumsuz**
+- Davet / randevu / plan sunumu adımları sonrası otomatik belirlenebilir
+  VEYA direkt işlenebilir.
+- Not olarak:
+  - Yumuşak → ❄️ DeepFreeze
+  - Net → ⛔ Blok
+- AI bunu izler.
+
+**🔄 Sadece Durum Değiştir**
+- Buraya MUTLAKA not girilerek manuel olarak statü değiştirilir.
+- AI nottan bilgi alır.
+
+### 5.3 OTOMATİK GEÇİŞ KURALLARI
+hayir=1 → (manuel seçim gerekli) ❄️ veya ⛔
+plan=1 AND kayit=1 → 🎓 SG
+plan=1 AND kayit=0 → 🔔 Takip
+plan=0 AND davet=1 → 🟢 Aktif
+randevu_tarihi/saati doluysa → randevu=1 (bayrak)
+durum "Blok" içeriyorsa → blok=1 (kara liste)
+
+
+### 5.4 ADAY LİSTESİ GÖRÜNÜMÜ
+
+Her satır:
+- **ID** (kayıt sırası)
+- **İsim** (LinkedIn URL varsa tıklanabilir link)
+- **Kayıt Tarihi**
+- **Açıklama** (son gelişme + durum ikonu)
+- **İşlem** (Sil butonu)
+
+**Bloklu adaylar (`blok=1`) ana listede GÖRÜNMEZ.**
+
+## 6. v6'DA YAPILANLAR (2026-10-09)
+
+### 4A — config.py Genişletme ✅
+- MODEL_TOP_P_MAP, MODEL_TOP_K_MAP,
+  MODEL_REPEAT_PENALTY_MAP, MODEL_REPEAT_LAST_N_MAP
+- ANALIZ_TEMP_MAP (düşük temp profili)
+- CHAT_GECMIS_LIMIT = 6
+- ADAY_STATULERI (7 kayıt, on_tespit/sonuc katmanlı)
+- OLAY_TIPLERI (7 kayıt, html_value + bayrak)
+- STATU_GECIS_KURALLARI (4 kural)
+- Commit: b3d4327
+
+### 4B — Bağlantılar ✅
+- 4B-1: ollama_client 4 _get_* fonksiyonu
+  → satır 122-125 sabitleri kaldırıldı
+  → Commit: 84fd71b
+- 4B-2: candidates.py olay tipi bug fix
+  → HTML "Takip Görüşmesi" artık doğru yakalanıyor
+  → HTML "Hayır" artık doğru yakalanıyor
+  → Commit: 657e4d9
+- 4B-3: database.py _statu_adi helper
+  → 3 hardcoded statü config'ten okuyor
+  → Commit: df8453f
+
+### Bug Fix — Mükerrer Blok Temizliği ✅
+- candidates.py'de 163-200 satırları silindi
+- "tip" NameError giderildi
+- Commit: c9e2ee6
+
+### Mükerrer Kayıt Temizliği
+- aday_olaylari'ndan 4 mükerrer silindi (id 1232-1235, aday 244)
+- DB yedeği: linkedin_takip.db.bak_mukerrer_temizlik
+
+### Test Sonuçları (Canlı)
+- ✅ Eski aday + plan → otomatik 🔔 Takip
+- ✅ Yeni aday + hızlı görüşme + plan → 🔔 Takip
+- ✅ Kayıt → 🎓 SG
+- ⚠️ `kayit=1` tek başına otomatik SG TETİKLEMİYOR
+  (çünkü o olayda plan=0; 4C'de çözülecek)
+
+## 7. BİLİNEN SORUNLAR (v8'e taşınacak)
+
+### 7.1 Otomatik SG Tetiklenmiyor
+- Bir aday önce plan yapmış, sonra kayıt yapmış
+- Kayıt olayında `plan=0` gönderiliyor → kural tetiklenmiyor
+- Manuel durum: SG seçilebilir (dropdown'dan)
+- **Çözüm (4C):** `aday_durum_otomatik_guncelle` DB'deki mevcut
+  bayrakları da okumalı
+
+### 7.2 DB İlişkisi Kırık (Madde 2'ye devir)
+- `adaylar.id` ile `aday_profil.id` AYNI DEĞİL
+- `aday_olaylari.aday_id` hangi tabloya referans veriyor belirsiz
+- Kanıt:
+  - adaylar: 77 | olaylar: 260 | profil: 265
+  - adaylar ∩ olaylar: 12
+  - profil ∩ olaylar: 26
+  - **222 değer hiçbir tabloyla eşleşmiyor**
+- Sil işlemi cascade değil → yetim kayıtlar birikiyor
+- **Çözüm (Madde 2):** İlişkiyi netleştir + migration yaz +
+  cascade sil ekle
+
+### 7.3 Frontend Badge Güncellenmiyor
+- Kart statüsü değişiyor ama ana liste rozeti yenilenmiyor
+- Sayfa yenilenince düzeliyor
+- **Çözüm:** Kayıt sonrası `adaylariYukle()` çağrısı
+
+## 8. YARIN SIRADAKİ İŞLER
+
+### 4C — Sistem Promptu Dinamik + DB Bayrak Okuma
+- `_sistem_prompt()` hardcoded statüleri bıraksın
+  → config.ADAY_STATULERI'ndan üretsin
+- `aday_durum_otomatik_guncelle` DB'deki mevcut bayrakları okusun
+  (7.1 sorunu çözer)
+- `chat_stream(profil="analiz")` parametresi
+  → ANALIZ_TEMP_MAP devreye girsin
+
+### 4D — chat.py df_ozet Sadeleştirme
+- Eski bayrak özeti (Davet: 12 | Randevu: 8 ...) KALDIRILACAK
+- Yerine STATÜ-MERKEZLİ özet:
+TOPLAM: 45 aday (bloklular hariç)
+STATÜ DAĞILIMI:
+⚪ Değerlendirilecek: 12
+🟢 Aktif: 8
+🔥 Sıcak: 5
+🔔 Takip: 3
+🎓 SG: 2
+❄️ DeepFreeze: 1
+
+- UI ile birebir uyumlu olacak
+
+### Madde 2 — Events Tablosu
+- DB ilişkisi düzeltmesi (7.2)
+- Yetim kayıt temizliği
+- Hatırlatmalar + Son Gelişmeler
+
+### Madde 5 — Takvim Sayfası
+- events tablosunu kullanır
+- /takvim rotası
+
+## 9. KAPSÜL SİSTEMİ (YENİ)
+
+### Amaç
+Her oturumda keşif yapmayı sıfıra indirmek. Manifest **kararlar**,
+Kapsül **kodun kendisi**.
+
+### Üretim
+```powershell
+cd C:\AI_YEREL\LiNKEDiN_TAKiP
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+.\KAPSUL_URET_v2.ps1 -Madde 4
+Çıktı: raporlar\kapsuller\KAPSUL_MADDE4_v2_YYYYMMDD.txt
+(UTF-8 BOM'suz — mojibake yok)
+
+İçerik
+config.py tam
+
+core/ollama_client.py tam
+
+routes/chat.py tam
+
+routes/candidates.py tam
+
+core/database.py (aday_durum_otomatik_guncelle bölgesi)
+
+DB şeması
+
+Yeni Oturum Akışı
+Manifest + ilgili kapsül yapıştırılır
+
+AI tam bağlamla başlar — keşif yok
+
+İş 1-2 saatte biter
+
+Yeni kapsül üretilir + commit
+
+10. ÇALIŞMA YÖNTEMİ VE PRATİKLERİMİZ
+10.1 Keşif
+PowerShell hedefli arama:
+Select-String -Path <dosya> -Pattern "<regex>"
+
+Belirli satır aralığı:
+Get-Content <dosya> -Encoding UTF8 | Select-Object -Skip X -First Y
+
+TÜM dosyayı yapıştırmak yerine sadece gerekli satırlar
+
+10.2 Değişiklik
+Önce YEDEK:
+Copy-Item <dosya> <dosya>.bak_v7_YYYYMMDD[_madde]
+
+Ctrl+F ile "bul ve değiştir" (tam blok)
+
+Tüm ID/sınıf/fonksiyon isimleri KORUNUR
+
+Tek seferde tek fonksiyon değiştir, test et
+
+def satırlarına ASLA dokunma — sadece içeriği değiştir
+
+10.3 Doğrulama
+Kaydet
+
+python -c "from <modul> import <isim>; print('OK')"
+
+Flask restart (Baslat.bat kapat → yeniden başlat)
+
+Tarayıcıda Ctrl+Shift+R
+
+F12 konsol: kırmızı hata var mı?
+
+Flask terminalinde kırmızı traceback var mı?
+
+10.4 Geri Dönüş
+Her değişiklik öncesi yedek
+
+Copy-Item <dosya>.bak_v7_... <dosya> -Force
+
+1 saniyede eski haline döner
+
+10.5 Commit
+git status → değişenleri gör
+
+git add <spesifik dosyalar> (yedekler .gitignore'da)
+
+git commit -m "v7: <kısa özet>"
+
+git push origin main
+
+10.6 Yedek İsimlendirme
+.bak_v6_YYYYMMDD → sürüm öncesi
+
+.bak_v6_YYYYMMDD_<madde> → belirli madde
+
+.bak_1a_v1 → iterasyon
+
+10.7 İletişim Tarzı
+"Üstad" hitaplı, saygılı ama samimi
+
+Adım adım, acele ettirmeden
+
+Kodlama bilgisi sınırlı → jargondan kaçın
+
+Her büyük değişiklik sonrası "anlaşıldı mı?" onayı
+
+Manifest her oturum sonunda güncellenir
+
+Kanıta dayalı çalış — tahmin değil, gözlem
+
+11. GIT RAPORU (2026-10-09 sonu)
+Bugünkü Commit'ler
+c9e2ee6 v6 fix: candidates.py mukerrer blok temizlendi - tip NameError giderildi
+df8453f v6 madde4b: config tek kaynak - ollama parametreleri + olay tipi + otomatik statu
+657e4d9 v6 madde4b2: candidates.py olay tipi bug fix
+84fd71b v6 madde4b1: ollama_client 4 model parametresi config'ten besleniyor
+b3d4327 v6 madde4a: config.py AI parametreleri + statu & olay tek kaynak
+Repo
+URL: https://github.com/karyenic/AI_YEREL-LiNKEDiN_TAKiP
+
+Branch: main
+
+Sync: ✅ yerel = origin/main
+
+Working tree: temiz
+
+Yedekler (git'te YOK, .gitignore'da)
+config.py.bak_v6_20261010_madde4a
+
+config.py.bak_v6_20261010_madde4b2
+
+core/ollama_client.py.bak_v6_20261010_madde4b
+
+routes/candidates.py.bak_v6_20261010_madde4b2
+
+routes/candidates.py.bak_v6_20261010_madde4b2_oncesi
+
+core/database.py.bak_v6_20261010_madde4b3
+
+data/linkedin_takip.db.bak_mukerrer_temizlik
+
+12. ÖNEMLİ NOTLAR
+ministral-3:14b ÇIKARILDI (template uyumsuzluğu)
+
+BACKUP_ACIL_20261008_001411 klasörü DOKUNULMUYOR
+
+LF→CRLF uyarısı zararsız (Windows normal)
+
+KAPSUL_URET.ps1 (v1) ve KAPSUL_URET_v2.ps1 kişisel araç, git'te YOK
+
+Manifest dosyası her oturum sonunda kaydedilir
+
+13. SONRAKİ SOHBET İÇİN NOT
+Bu manifest v7, sonraki sohbetin tam olarak nerede kaldığımızı
+anlaması için yeterli. Sonraki sohbet:
+
+Bu manifesti okuyacak
+
+KAPSÜL_MADDE4_v2_YYYYMMDD.txt'yi okuyacak (kodun tam hali)
+
+Madde 4C ile başlayacak (sistem promptu dinamik)
+
+Sonra Madde 4D (chat.py df_ozet)
+
+Sonra Madde 2 (events tablosu + DB ilişkisi düzeltme)
+
+En son Madde 5 (takvim)
+
+Kritik Hatırlatma
+Kullanıcının notu: "AI Modellerden doğru yanıt-öneri ve analiz
+almamız için ay süreçlerindeki yenileme ve değişikliklerin
+system promptuna doğru enjekte edilmesi kontrol edilmeli"
+
+Bu notun %60'ı 4A+4B'de tamamlandı
+
+Kalan %40: 4C (sistem promptu dinamik) + 4D (df_ozet statü-merkezli)
+
+═══════════════════════════════════════════════════════════════════════
+Manifest v7 sonu — 2026-10-09 akşam kapanışı
+Bugün: 4A + 4B + bug fix + DB tanı
+Yarın: 4C + 4D
+Kolay gelsin Üstad.
+═══════════════════════════════════════════════════════════════════════
+

@@ -47,9 +47,6 @@ backup_*/
 _BACKUP_BEFORE_GITHUB_RESET/
 _GITHUB_TEMP/
 
-# ==================== Gecici araclar ====================
-Araçlar/
-araclar/
 duzelt_*.py
 tespit.py
 
@@ -82,4 +79,13 @@ desktop.ini
 
 # AI teshis raporlari - yerel kalir
 raporlar/
-AI_MIMARI_TESHIS_RAPORU.ps1
+
+
+
+# AI teshis raporlari - yerel kalir
+raporlar/
+
+# Kisisel araclar
+Araçlar/
+araclar/
+KAPSUL_URET*.ps1
