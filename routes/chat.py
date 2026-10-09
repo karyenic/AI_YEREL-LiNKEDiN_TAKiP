@@ -4,7 +4,7 @@ import pandas as pd
 from core.database import (chat_mesajlari_getir, chat_mesaj_ekle, chat_temizle,
                           adaylari_getir, aday_karti_getir)
 from core.ollama_client import chat_stream, sistem_mesaji_olustur
-from config import ADAY_OLAY_LIMIT, ADAY_PROMPT_LIMIT, DEFAULT_MODEL, DEFAULT_FALLBACK
+from config import ADAY_OLAY_LIMIT, ADAY_PROMPT_LIMIT, DEFAULT_MODEL, DEFAULT_FALLBACK, PRIMARY_MODELS
 
 bp = Blueprint("chat", __name__, url_prefix="/api/chat")
 
@@ -27,8 +27,21 @@ def stream():
     # NOT: "fallback" frontend'den hic gonderilmiyor, bu yuzden None kalirdi.
     # None, chat_stream icinde ikinci modele dusulurken pydantic hatasiyla
     # cokerdi - "or DEFAULT_FALLBACK" ile garanti altina aliyoruz.
-    model = d.get("model") or DEFAULT_MODEL
+    #
+    # v7 4C-BUG: Frontend bazen model="otomatik" gonderir. Bu ad Ollama'da
+    # model olmadigi icin "model not found" hatasi cikar ve 7b'ye dusulur.
+    # Whitelist kontrolu ile bilinmeyen adlar DEFAULT_MODEL'a cevrilir.
+    model_ham = (d.get("model") or "").strip()
+    if model_ham in PRIMARY_MODELS:
+        model = model_ham
+    else:
+        model = DEFAULT_MODEL
+        if model_ham and model_ham not in ("", "otomatik", "auto", "default"):
+            print(f"[MODEL] Bilinmeyen model '{model_ham}' -> '{DEFAULT_MODEL}'")
+
     fallback = d.get("fallback") or DEFAULT_FALLBACK
+    if fallback not in PRIMARY_MODELS:
+        fallback = DEFAULT_FALLBACK
 
     if not kullanici_mesaji:
         return jsonify({"error": "Mesaj bos"}), 400

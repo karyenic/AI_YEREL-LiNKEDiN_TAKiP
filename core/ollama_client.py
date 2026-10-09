@@ -7,7 +7,8 @@ import psutil
 from config import (MODEL_CONTEXT_MAP, MODEL_TEMP_MAP, DEFAULT_NUM_CTX,
                     KEEP_ALIVE, DEFAULT_MODEL, DEFAULT_FALLBACK,
                     MODEL_TOP_P_MAP, MODEL_TOP_K_MAP,
-                    MODEL_REPEAT_PENALTY_MAP, MODEL_REPEAT_LAST_N_MAP)
+                    MODEL_REPEAT_PENALTY_MAP, MODEL_REPEAT_LAST_N_MAP,
+                    ADAY_STATULERI)
 
 _warmed_models = set()
 
@@ -55,23 +56,29 @@ def warm_up(model_adi=DEFAULT_MODEL):
         print(f"UYARI: Warm-up hatasi ({model_adi}): {e}")
         return False
 
+def _statuleri_metne_cevir():
+    """config.ADAY_STATULERI'ndan sistem promptu icin statu listesi uretir."""
+    on_tespit = [s for s in ADAY_STATULERI if s.get("katman") == "on_tespit"]
+    sonuc = [s for s in ADAY_STATULERI if s.get("katman") == "sonuc"]
+
+    satirlar = ["STARTING STATUSES (user selects when creating a candidate):"]
+    for i, s in enumerate(on_tespit, 1):
+        satirlar.append(f"{i}. {s['tam']}: {s['aciklama']}")
+    satirlar.append("")
+    satirlar.append("AUTOMATIC STATUSES (system assigns based on events):")
+    for i, s in enumerate(sonuc, len(on_tespit) + 1):
+        satirlar.append(f"{i}. {s['tam']}: {s['aciklama']}")
+    return "\n".join(satirlar)
+
+
 def _sistem_prompt(df_ozet):
+    statu_metni = _statuleri_metne_cevir()
     return f"""[SYSTEM ROLE & CORE OBJECTIVE]
 You are an elite, highly rigorous AI Executive Assistant and Chief Data Analyst specialized in Candidate Tracking Systems (ATS), Network Marketing operations, conversion forecasting, and behavioral pattern analysis.
 Your core objective is to act as a strategic partner: analyzing candidate progression, predicting conversion probabilities based on historical patterns, identifying bottlenecks, and providing actionable, forward-looking recommendations.
 
 [CANDIDATE CATEGORIES (The EXACT statuses in this system)]
-
-STARTING STATUSES (user selects when creating a candidate):
-1. ⚪ Değerlendirilecek (To be evaluated): Worth considering later
-2. 🟢 Aktif (Active): Normal follow-up, ongoing
-3. 🔥 Sıcak (Hot): High potential, urgent follow-up needed
-
-AUTOMATIC STATUSES (system assigns based on events):
-4. 🔔 Takip (Follow-up): Plan was positive but no registration yet
-5. 🎓 SG (Mezun / Graduated): Registration completed, exited funnel
-6. ❄️ DeepFreeze: SOFT NO — on hold, may be revisited later (3-6 months)
-7. ⛔ Blok: HARD NO — blocked, hidden from main list, stored only in DB
+{statu_metni}
 
 [STATUS TRANSITION RULES]
 - Plan ✓ + Kayıt ✓ → 🎓 SG (Mezun)
