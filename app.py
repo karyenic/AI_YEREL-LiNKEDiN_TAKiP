@@ -91,8 +91,11 @@ def ollama_durum():
 
 @app.route("/api/ollama/warmup", methods=["POST"])
 def ollama_warmup():
+    from config import PRIMARY_MODELS
     d = request.get_json() or {}
-    m = d.get("model", DEFAULT_MODEL)
+    istenen = (d.get("model") or "").strip()
+    # v7 4C-4: bilinmeyen model adi DEFAULT_MODEL'a cevrilir
+    m = istenen if istenen in PRIMARY_MODELS else DEFAULT_MODEL
     ok = ollama_client.warm_up(m)
     return jsonify({"ok": ok, "model": m})
 

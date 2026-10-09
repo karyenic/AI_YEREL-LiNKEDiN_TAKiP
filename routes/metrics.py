@@ -134,7 +134,8 @@ Be concise and decision-ready — toplam 10-12 satırı geçme. Rakam uydurma, s
     try:
         metin = ""
         for parca in chat_stream([{"role": "user", "content": prompt}],
-                                  model=DEFAULT_MODEL, fallback=DEFAULT_FALLBACK):
+                                  model=DEFAULT_MODEL, fallback=DEFAULT_FALLBACK,
+                                  profil="analiz"):
             metin += parca
         return jsonify({"ozet": metin.strip(), "huni": h})
     except Exception as e:
