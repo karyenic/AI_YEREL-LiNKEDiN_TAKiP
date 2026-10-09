@@ -161,43 +161,6 @@ def gelisme_ekle(aday_id):
     if "randevu oluştu" in metin or "randevu olustu" in metin:
         randevu = 1    
 
-    # RANDEVU TARIHI/SAATI DOLUYSA randevu=1
-    if randevu_tarihi or randevu_saati:
-        randevu = 1
-    metin = olay_metni.lower()
-       # OLAY TIPINDEN (birincil)
-    if tip in ("net hayır", "net hayir", "blok"):
-        hayir = 1
-    elif tip == "davet":
-        davet = 1
-    elif tip == "randevu":
-        randevu = 1
-        plan = 1  # Randevu = plan yapildi
-    elif tip == "plan":
-        plan = 1
-    elif tip == "kayit" or tip == "kayıt":
-        kayit = 1
-    elif tip == "takip":
-        takip = 1
-    elif tip == "olumsuz":
-        hayir = 1
-    elif tip == "görüşme":
-        # Görüşme = randevu yapıldı sayilir
-        randevu = 1
-    elif tip == "teklif":
-        plan = 1
-    
-    # METINDEN (ikincil - fallback)
-    if "plan anlatıldı" in metin or "plan anlatildi" in metin:
-        plan = 1
-    if "kayıt yapıldı" in metin or "kayit yapildi" in metin or "kayıt oldu" in metin or "kayit oldu" in metin:
-        kayit = 1
-    if "davet yapıldı" in metin or "davet yapildi" in metin:
-        davet = 1
-    if "hayır dedi" in metin or "hayir dedi" in metin or "reddetti" in metin:
-        hayir = 1
-    if "randevu oluştu" in metin or "randevu olustu" in metin:
-        randevu = 1
     
     # ═══════════════════════════════════════════════════════════
     # adaylar tablosunu guncelle
