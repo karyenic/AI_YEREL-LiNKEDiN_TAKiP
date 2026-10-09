@@ -862,45 +862,60 @@ def aday_linkedin_guncelle(aday_id, linkedin_url):
 
 
 def aday_durum_otomatik_guncelle(aday_id, davet=0, plan=0, kayit=0, hayir=0):
-    """Checkbox'lara gore statuyu otomatik gunceller.
     
+    """Checkbox'lara gore statuyu otomatik gunceller.
+
+    v7 4C-2: DB'deki MEVCUT bayraklar da okunur. Boylece bir aday
+    once plan yapmis, sonra kayit yapmissa, kayit olayinda plan=0
+    gelse bile DB'de plan=1 kaldigi icin "plan+kayit -> SG" gecisi
+    dogru tetiklenir.
+
     Kurallar:
     - Hayir -> Otomatik atama YOK (manuel secim: DeepFreeze veya Blok)
     - Plan ✓ + Kayit ✓ -> 🎓 SG
     - Plan ✓ + Kayit ✗ -> 🔔 Takip
-    - Plan ✗ (ve davet yok) -> ❄️ DeepFreeze
+    - Plan ✗ + Davet ✓ -> 🟢 Aktif
     """
-    yeni_durum = None
-    
-    if hayir == 1:
-        return False  # Manuel secim gerekli (DeepFreeze veya Blok), otomatik atama yapilmaz
-    if plan == 1 and kayit == 1:
-        yeni_durum = _statu_adi("sg")
-    elif plan == 1 and kayit == 0:
-        yeni_durum = _statu_adi("takip")
-    elif plan == 0 and davet == 1:
-        yeni_durum = _statu_adi("aktif")  # Davet var ama plan yokk
-    else:
-        return False  # Statu degismedi
-    
-    # Statu guncelle
     with _conn(ADAY_DB) as c:
         eski = c.execute(
-            "SELECT isim FROM adaylar WHERE id=?",
+            "SELECT isim, davet, plan, kayit, hayir FROM adaylar WHERE id=?",
             (aday_id,)
         ).fetchone()
-        
+
         if not eski:
             return False
-        
+
         isim = eski["isim"] or ""
+
+        # DB'deki mevcut + bu olaydan gelen bayraklari OR ile birlestir
+        davet_t = max(int(eski["davet"] or 0), int(davet or 0))
+        plan_t  = max(int(eski["plan"]  or 0), int(plan  or 0))
+        kayit_t = max(int(eski["kayit"] or 0), int(kayit or 0))
+        hayir_t = max(int(eski["hayir"] or 0), int(hayir or 0))
+
+        yeni_durum = None
+        if hayir_t == 1:
+            return False  # Manuel secim gerekli (DeepFreeze veya Blok)
+        if plan_t == 1 and kayit_t == 1:
+            yeni_durum = _statu_adi("sg")
+        elif plan_t == 1 and kayit_t == 0:
+            yeni_durum = _statu_adi("takip")
+        elif plan_t == 0 and davet_t == 1:
+            yeni_durum = _statu_adi("aktif")
+        else:
+            return False  # Statu degismedi
+
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
+
         profil = c.execute(
-            "SELECT id FROM aday_profil WHERE isim=? LIMIT 1",
+            "SELECT id, durum FROM aday_profil WHERE isim=? LIMIT 1",
             (isim,)
         ).fetchone()
-        
+
+        # Zaten ayni statude ise bosuna yazma
+        if profil and profil["durum"] == yeni_durum:
+            return False
+
         if profil:
             c.execute(
                 "UPDATE aday_profil SET durum=?, updated_at=? WHERE id=?",
