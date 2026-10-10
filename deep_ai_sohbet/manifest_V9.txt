@@ -1,0 +1,550 @@
+═══════════════════════════════════════════════════════════════════════
+  AI_YEREL-LiNKEDiN_TAKiP — ÇALIŞMA MANİFESTİ v9
+  Tarih: 2026-10-10 (gece kapanışı)
+  Amaç: Sonraki sohbetin tüm süreci ve yeni kararları kavraması
+  Önceki manifest: v8 (2026-10-10 sabah)
+  Git son commit: d915fe9  (v9: 4D + blok listesi + excel + sticky)
+  Bir önceki:     0f111c3  (Baslat.bat CONTEXT fix)
+═══════════════════════════════════════════════════════════════════════
+
+## 1. PROJE KİMLİĞİ
+
+- Proje adı: AI_YEREL-LiNKEDiN_TAKiP
+- Yerel yol: C:\AI_YEREL\LiNKEDiN_TAKiP
+- GitHub: https://github.com/karyenic/AI_YEREL-LiNKEDiN_TAKiP
+- Branch: main
+- Amaç: LinkedIn aday takip programı (ATS benzeri)
+- Kullanıcı: Tek kişi (karyenic)
+- Kullanıcı profili: Kodlama bilgisi sınırlı
+- Çalışma prensibi: Betikle çalış (v9'da esnetildi: 1-3 satırlık
+  düzeltmeler ELLE olabilir — konum + before/after net verilir)
+- Donanım: Intel Arc 140V (16GB VRAM) + 32GB RAM + IPEX/SYCL
+
+## 2. TEKNOLOJİ YIĞINI
+
+- Backend: Flask
+- Frontend: Saf JS + CSS
+- DB: SQLite (linkedin_takip.db, sohbet_gecmisi.db) → WAL mode
+- AI: Ollama IPEX-LLM (C:\AI_IPEX\Ollama\portable\ollama.exe)
+- Python: 3.11+ (venv — TEK venv: venv/)
+- Port: 5050 (Flask), 11434 (Ollama)
+- Yedekler: BACKUP_ACIL_20261008_001411 (dokunulmuyor)
+
+## 3. AKTİF MODEL AYARLARI
+
+### Aktif Modeller
+- DEFAULT_MODEL = "qwen2.5:14b"
+- DEFAULT_FALLBACK = "qwen2.5:7b"
+- KEEP_ALIVE = "24h"
+- DEFAULT_NUM_CTX = 8192
+- PRIMARY_MODELS = [qwen2.5:14b, qwen2.5:7b, qwen2.5:3b, llama3.1:latest]
+
+### Model MAP'leri (config.py)
+- MODEL_CONTEXT_MAP        → num_ctx per model
+- MODEL_TEMP_MAP           → temperature per model
+- MODEL_TOP_P_MAP          → top_p
+- MODEL_TOP_K_MAP          → top_k
+- MODEL_REPEAT_PENALTY_MAP → repeat_penalty
+- MODEL_REPEAT_LAST_N_MAP  → repeat_last_n
+- ANALIZ_TEMP_MAP          → analiz profili (0.20-0.30)
+
+### TEK KAYNAK PRENSİBİ (4C ile tamamlandı)
+- _sistem_prompt() artık config.ADAY_STATULERI'ndan DİNAMİK üretiliyor
+- ADAY_STATULERI (7), OLAY_TIPLERI (7), STATU_GECIS_KURALLARI (4)
+- Statüler, olay tipleri, AI parametreleri → config.py TEK KAYNAK
+
+## 4. İŞ MANTIĞI (KRİTİK — v8'den AYNEN KORUNDU)
+
+### 4.1 BAŞLANGIÇ STATÜLERİ (3, manuel seçim)
+
+Aday listeye girerken kullanıcı 3 kategoriden birini seçer:
+
+**⚪ Değerlendirilecek**
+- Gözlem aşaması. Durum/mesaj/iletişim ile davranışı izlenir.
+- Yakın iletişim oluşursa → 🟢 Aktif'e alınır.
+- AI aday kartındaki süreçleri izler.
+
+**🟢 Aktif**
+- Aday ile iletişim gelişmiş, aksiyon planına hazır.
+- AI kartta izlemeye devam eder.
+
+**🔥 Sıcak**
+- Aday beklenen profili sergiliyor, beklemeden davet adımına geçilir.
+- AI karttan izler.
+
+### 4.2 OLAY TİPLERİ → STATÜ AKIŞI
+
+**📝 Not / Mesaj**
+- Adayla oluşan iletişim adımları not edilir.
+- Statü değişmez. AI için ipucu oluşturur.
+
+**📞 Davet Yapıldı**
+- Davetin sonucunda randevu yapılıp yapılmadığı AI tarafından izlenir.
+- 2 seçenek:
+  - **Randevu yapılamadıysa** → manuel statü değişir VEYA normal
+    erteleme ise → yeni randevu set edilir, not düşülür. AI izler.
+  - **Randevu oluştuysa** → Plan adımına geçilir.
+    Plan sonucu değerlendirilip statü değiştirilir.
+
+**📅 Plan (İş Sunumu) Yapıldı**
+- 2 sonuç:
+  - **Olumlu** → a) Kayıt işlemi (aday mezun olur, durum: 🎓 SG)
+              b) Takip (🔔 Takip)
+  - **Olumsuz** → a) Yumuşak hayır: ❄️ DeepFreeze
+                 b) Net hayır: ⛔ Blok
+
+**🤝 Takip Görüşmesi**
+- Plan anlatılmış kişi ile kayıt adımına gitmeyi amaçlayan
+  iletişim/görüşme süreci.
+- Takip yapıldıysa 4 sonuç:
+  - a) Yumuşak Hayır → ❄️ DeepFreeze
+  - b) Net Hayır → ⛔ Blok
+  - c) Kayıt yapılmıştır → 🎓 SG
+  - d) Takip yumuşak geçti, sonuç sonraya kaldı → 🔔 Takip devam. AI izler.
+
+**✅ Kayıt İşlemi**
+- Aday MEZUN olmuştur (serbest girişimci).
+- OTOMATİK 🎓 SG statüsüne alınır.
+- AI aday olarak izlemeyi BIRAKIR.
+- Aday listesinde satır bilgisinde 🎓 SG olarak görünür.
+
+**🔴 Hayır / Olumsuz**
+- Davet / randevu / plan sunumu adımları sonrası otomatik belirlenebilir
+  VEYA direkt işlenebilir.
+- Not olarak:
+  - Yumuşak → ❄️ DeepFreeze
+  - Net → ⛔ Blok
+- AI bunu izler.
+
+**🔄 Sadece Durum Değiştir (config: "Durum Değişikliği")**
+- Buraya MUTLAKA not girilerek manuel olarak statü değiştirilir.
+- AI nottan bilgi alır.
+- ✅ v9'da düzeltildi: candidates.py artık "Durum Değişikliği" de
+  kabul ediyor (önce sadece "Sadece Durum Değiştir" idi → 400 hatası).
+
+### 4.3 OTOMATİK GEÇİŞ KURALLARI (STATU_GECIS_KURALLARI)
+
+hayir>=1 → (manuel seçim gerekli) ❄️ veya ⛔
+plan=1 AND kayit=1 → 🎓 SG
+plan=1 AND kayit=0 → 🔔 Takip
+plan=0 AND davet=1 → 🟢 Aktif
+randevu_tarihi/saati doluysa → randevu=1 (bayrak)
+durum "Blok" içeriyorsa → blok=1 (kara liste)
+
+**4C-2 DÜZELTMESİ:** aday_durum_otomatik_guncelle artık DB'deki
+MEVCUT bayrakları da okuyor.
+
+### 4.4 ADAY LİSTESİ GÖRÜNÜMÜ
+
+Her satır:
+- **ID** (kayıt sırası)
+- **İsim** (LinkedIn URL varsa tıklanabilir link)
+- **Kayıt Tarihi**
+- **Açıklama** (son gelişme + durum ikonu)
+- **İşlem** (Sil butonu)
+
+**Bloklu adaylar (`blok=1`) ana listede GÖRÜNMEZ.**
+UI şu an `adaylar` tablosunu okuyor → 76 - 3 bloklu = 73 görünür.
+
+**v9 EKLEMELER:**
+- Sticky header: ✅ düzeltildi (thead th position: sticky)
+- Arama kutusu: ✅ ortaya çekildi (grid 3 kolon)
+- "İş Arıyor" metrik kartı: ✅ kaldırıldı (kullanılmıyor)
+
+### 4.5 STATÜ SAYILARI (v9 sonu — migration sonrası)
+
+- adaylar tablosu (kaynak): 76
+- bloklu (gizli): 3
+- UI'da görünen: 73
+- aday_profil: 79 (isimle eşleşiyor)
+
+Statü dağılımı (aday_profil):
+- 🟢 Aktif: 28
+- ⚪ Değerlendirilecek: 24
+- 🔥 Sıcak: 20
+- 🔔 Takip: 3
+- ⛔ Blok: 3
+- ❄️ DeepFreeze: 1
+- 🎓 SG: 0
+TOPLAM: 79
+
+### 4.6 DEPRECATED STATÜLER (v9'da temizlendi)
+
+- 🆕 Yeni → artık geçersiz (13 kayıt ⚪'ya çevrildi)
+- 🔴 Olumsuz → artık geçersiz (3 kayıt ⛔'ya çevrildi)
+
+### 4.7 BLOK LİSTESİ (v9'da eklendi)
+
+- Raporlama sayfasında "⛔ Blok" metric kartı (kırmızı ton)
+- Tıklayınca modal açılır, bloklu adaylar tablo halinde
+- Her satırda [↺ Geri Al] + [🗑 Sil]
+- Geri Al → `blok=0` yapılır, aday ana listeye döner
+- Sil → kalıcı silme (mevcut mekanizma)
+- AI tarafından değerlendirilmez (df_ozet'te bloklu hariç)
+
+## 5. v9'DA YAPILANLAR (2026-10-10)
+
+### 4D — chat.py df_ozet statü-merkezli ✅
+- routes/chat.py: bayrak-merkezli (Davet: X | Randevu: Y) →
+  statü-merkezli (⚪ 24 / 🟢 28 / 🔥 20...)
+- Import sqlite3 + ADAY_DB + ADAY_STATULERI
+- Artık UI ile birebir uyumlu, Çince sızma yok
+- Kanıt: chat cevabı "Toplam: 73 (bloklular hariç), ⚪ 24, 🟢 28..."
+
+### DB Migration — Deprecated Statüler ✅
+- 🆕 Yeni (13) → ⚪ Değerlendirilecek
+- 🔴 Olumsuz (3) → ⛔ Blok (adaylar.blok=1 olanlar için)
+- Yedek: linkedin_takip.db.bak_status_migrate_20261010_201410
+
+### candidates.py L102 Tutarsızlık ✅
+- Önce: "Sadece Durum Değiştir" (config'te: "Durum Değişikliği")
+- Şimdi: ikisi de kabul ediliyor (tuple kontrolü)
+- Artık "Durum Değişikliği" seçilip not boş bırakılsa da 400 dönmüyor
+
+### Blok Listesi Özelliği ✅
+- core/database.py: +bloklu_adaylari_getir, +aday_blok_kaldir
+- routes/candidates.py: +GET /bloklu, +PUT /<id>/blok-kaldir
+- templates/metrics.html: +modal HTML (eski .blok-pill-satiri
+  hâlâ var, CSS ile gizli — temizlik bekliyor)
+- static/app.js: +6 fonksiyon (blokModalAc, blokListeGoster,
+  blokGeriAl, blokSilOnay, blokModalKapat, blokSayisiGuncelle)
+- static/style.css: +modal + pill + kart stilleri
+
+### Blok Pill Konum Değişikliği ✅
+- static/app.js: modeller listesinden is_ariyor çıkarıldı,
+  yerine ⛔ Blok kartı (metrik kartları satırında)
+- static/style.css: .blok-pill-satiri gizlendi (display: none),
+  .blok-metric-card kırmızı ton
+- Sonuç: metrik kartları satırının en sağında
+
+### Excel Watcher Optimizasyonu ✅
+- static/app.js: setInterval(excelBildirimGoster, 5000) yorum
+  haline getirildi (silinmedi — ileride geri açılabilir)
+- Flask terminali artık saniyede bir /api/excel/durum basmıyor
+- Sadece sayfa açılışında 1 kez çağrılıyor
+
+### Excel Bildirimi Sessizleştirme ✅
+- static/app.js: "Yeni aday yoksa bildirim gösterme" kuralı
+- `if (!d.eklenen || d.eklenen === 0) return;`
+- Her menü değişiminde görünen gereksiz bildirim kaldırıldı
+
+### Sticky Header Düzeltmesi ✅
+- static/style.css: `#aday-tablo thead th` → position: sticky;
+  top: 0; z-index: 100
+- Önceden position: relative vardı, `thead th`'ın sticky kuralını
+  eziyordu (CSS specificity hatası)
+- Sonuç: tablo scroll olurken başlıklar üstte sabit
+
+### Arama Kutusu Ortaya Çekildi ✅
+- static/style.css: .aday-listesi-header → grid 3 kolon
+  (1fr auto 1fr)
+- .aday-listesi-arac → justify-self: center
+- Sonuç: Arama kutusu + 💡 ipucu artık başlık ortasında
+
+## 6. GPU / IPEX DURUMU (KRİTİK BİLGİ)
+
+### Görev Yöneticisi Testi (kanıtlı)
+- GPU: Intel Arc 140V, 18 GB VRAM
+- 14b model: 11.1 GB VRAM'de
+- Model çalışırken GPU Compute: %82-95
+- Idle: %2
+- CPU: %8 (sadece koordinasyon)
+
+### ollama ps YANILTICI (IPEX-LLM bug)
+- "100% CPU" → GERÇEK DEĞİL, GPU'da çalışıyor
+- "CONTEXT 0" → GERÇEK DEĞİL, num_ctx uygulanıyor
+- Gerçek test: Görev Yöneticisi → Performans → GPU
+
+### Performans Ölçümleri
+- Cold start (1. soru): 60 sn ilk token
+- Warm (2.+ sorular): 15 sn ilk token
+
+## 7. BİLİNEN SORUNLAR (v9 sonu — güncel)
+
+### 7.1 ✅ ÇÖZÜLDÜ — Excel Watcher Çok Sık Tetikleniyor
+setInterval kaldırıldı, sadece açılışta 1 kez çalışıyor.
+
+### 7.2 ⚠️ DEVAM — Statü Toplamı Uyuşmuyor
+adaylar (76) vs aday_profil (79) → 3 fark var.
+Madde 2'de (events tablosu + id migration) çözülecek.
+
+### 7.3 ✅ ÇÖZÜLDÜ — 14b Çince Sızıyor
+df_ozet artık statü-merkezli, bayrak-merkezli değil.
+Model artık kendi kafasına toplama yapmıyor.
+
+### 7.4 ⚠️ DEVAM — DB İlişkisi
+adaylar.id ≠ aday_profil.id, isim üzerinden eşleşiyor (TRIM'le).
+Yetim kayıtlar v8'de temizlendi (952 silindi).
+İleride: aday_profil.id → adaylar.id migration (Madde 2).
+
+### 7.5 ✅ ÇÖZÜLDÜ — Frontend Badge Güncellenmiyor
+adaylariYukle() artık gelismeKaydet sonrası çağrılıyor.
+
+### 7.6 ✅ ÇÖZÜLDÜ — Sticky Header Kayboldu
+CSS çakışması düzeltildi (position: relative → sticky).
+
+### 7.7 ⚠️ DEVAM — static/app.js Model Listesi Hardcoded
+L~1160 civarı: qwen2.5:14b, qwen2.5:7b, llama3.1, qwen2.5:3b
+Sıra config'ten farklı. Çözüm: /api/models endpoint.
+
+### 7.8 ✅ ÇÖZÜLDÜ — candidates.py "Sadece Durum Değiştir"
+Artık "Durum Değişikliği" de kabul ediliyor.
+
+### 7.9 🆕 YENİ — HTML Temizlik Bekliyor
+templates/metrics.html'de eski `.blok-pill-satiri` bloğu hâlâ var.
+CSS ile gizli (display: none) ama HTML'den çıkarılmalı.
+
+### 7.10 🆕 YENİ — Model Sıra Uyumsuzluğu
+static/app.js sırası: 14b, 7b, llama3.1, 3b
+config.PRIMARY_MODELS: 14b, 7b, 3b, llama3.1
+Çözüm: 7.7 ile birlikte /api/models endpoint
+
+## 8. CEBE ATILANLAR (v10'a taşınan)
+
+| # | Konu | Detay | Öncelik |
+|---|------|-------|---------|
+| A | **/api/models endpoint** | static/app.js hardcoded model listesi config'ten gelsin | Orta |
+| B | **HTML temizlik** | metrics.html'de eski .blok-pill-satiri bloğu silinsin | Düşük |
+| C | **Model sıra uyumu** | app.js sırası config.PRIMARY_MODELS ile aynı olsun (A ile birlikte) | Düşük |
+| D | **Madde 2 — Events tablosu** | adaylar.id ↔ aday_profil.id migration, cascade sil | Orta-uzun |
+| E | **Madde 5 — Takvim sayfası** | /takvim rotası, events tablosunu kullanır | Uzun |
+
+## 9. v10'DA SIRADAKİ İŞLER
+
+### A + C — /api/models Endpoint (KÜÇÜK, TEK BETİK)
+- app.py: yeni endpoint /api/models
+- static/app.js: modelleriYukle() fetch ile beslenir
+- Model sırası config.PRIMARY_MODELS'ten gelir
+- Etki: tek kaynak prensibi korunur, sıra uyumu sağlanır
+
+### B — HTML Temizlik (KÜÇÜK)
+- templates/metrics.html: eski <div class="blok-pill-satiri"> silinir
+- static/style.css: .blok-pill-satiri gizleme kuralı da silinebilir
+- Etki: kod temizliği, davranış aynı kalır
+
+### D — Events Tablosu (BÜYÜK, ana iş)
+- adaylar.id ↔ aday_profil.id migration
+- Cascade sil
+- Hatırlatmalar + Son Gelişmeler aktif edilir
+- UI: Raporlama sayfasındaki boş kartlar dolar
+
+### E — Takvim Sayfası (UZUN)
+- events tablosunu kullanır
+- /takvim rotası
+- Aylık/haftalık görünüm
+
+## 10. YENİ ARAÇLAR (Araçlar/ klasörü)
+
+### v8'den devam
+- fix_4c1.py, fix_4c_bug_model.py, fix_4c3.py, fix_4c4.py
+- db_envanter.py, db_envanter2.py, db_temizle.py
+
+### v9'da eklenenler
+- fix_4d.py                  → chat.py statü-merkezli + candidates.py L102
+- db_statu_teshis.py         → durum dağılımı raw (read-only)
+- fix_4d_status_migrate.py   → deprecated statü migration
+- fix_blok_listesi.py        → blok özelliği (5 dosya)
+- fix_blok_pill_konum.py     → blok pill metrik satırına taşı
+- fix_excel_watcher.py       → setInterval kapat
+- kapsul_uret.py             → otomatik kapsül üretici (v4)
+
+### Betik Standardı (ZORUNLU)
+- Self-contained Python betiği
+- Yedek alır (zaman damgalı)
+- Syntax (py_compile) + import test
+- Hata → OTOMATİK geri yükleme
+- Rapor basar: [OK] / [XX]
+- Kullanıcı sadece: python "Araçlar\fix_XXX.py"
+- Kritik silmeler: "SIL" onayı istenir
+
+## 11. ÇALIŞMA YÖNTEMİ VE PRATİKLERİMİZ
+
+### 11.1 Betik vs Elle (v9'da güncellendi)
+- 1-3 satır, tek dosya → ELLE (konum + before/after net verilir)
+- Çok satır (10+) veya çok dosya → BETİK
+- Riskli (silme, DB, migration) → BETİK + onay
+- CSS/HTML küçük bloklar → ELLE olabilir
+
+### 11.2 Değişiklik
+- Önce YEDEK (betik otomatik veya manuel)
+- Tüm ID/sınıf/fonksiyon isimleri KORUNUR
+- Tek seferde tek fonksiyon
+- def satırlarına DOKUNMA
+
+### 11.3 Doğrulama
+- py_compile + import test
+- Flask restart (Baslat.bat)
+- Tarayıcı Ctrl+Shift+R
+- F12 konsol kontrol
+- Flask terminal kontrol
+
+### 11.4 Geri Dönüş
+- Her değişiklik öncesi yedek
+- DB için: .bak_yetim_temizlik_YYYYMMDD_HHMMSS
+
+### 11.5 Commit
+- git add <spesifik dosyalar>
+- git commit -m "vX: <kısa özet>"
+- git push origin main
+
+### 11.6 İletişim Tarzı
+- "Üstad" hitaplı, saygılı ama samimi
+- Adım adım, acele ettirmeden
+- Kodlama bilgisi sınırlı → jargondan kaçın
+- Manifest her oturum sonunda güncellenir
+
+### 11.7 Kanıta Dayalı Çalış
+- Tahmin değil, gözlem
+- ollama ps YANILTICI → Görev Yöneticisi
+- Flask terminal log'u = gerçek durum
+
+## 12. GIT RAPORU (2026-10-10 gece)
+
+### Bu Oturumdaki Commit
+- d915fe9  v9: 4D statu-merkezli df_ozet + blok listesi +
+           excel watcher + sticky header + arama konumu
+           (6 files changed, 483 insertions, 17 deletions)
+
+### Önceki
+- 0f111c3  v7: Baslat.bat IPEX_LLM_NUM_CTX=8192 + ...
+- 8b9d148  v7 4C-4: metrics strateji profil=analiz + ...
+- e5661a5  v7 4C-3: analiz profili - temp 0.35->0.20
+- 92ac94f  v7 4C-1 + 4C-BUG: sistem promptu dinamik + ...
+- f67b712  v7 4C-2: aday_durum_otomatik_guncelle DB ...
+
+### Repo
+- URL: https://github.com/karyenic/AI_YEREL-LiNKEDiN_TAKiP
+- Branch: main
+- Sync: ✅ yerel = origin/main (d915fe9)
+- Working tree: sadece cebe_sticky.txt untracked (geçici)
+
+## 13. ÖNEMLİ NOTLAR
+
+- ministral-3:14b ÇIKARILDI (template uyumsuzluğu)
+- BACKUP_ACIL_20261008_001411 klasörü DOKUNULMUYOR
+- LF→CRLF uyarısı zararsız (Windows normal)
+- KAPSUL_URET.ps1 (v1) ve KAPSUL_URET_v2.ps1 kişisel araç, git'te YOK
+- .env dosyası YOK (kod os.environ kullanmıyor)
+- Tek venv: venv/
+- Manifest dosyası her oturum sonunda kaydedilir
+- Tüm .bak_* dosyalar .gitignore'da
+
+## 14. SONRAKİ SOHBET İÇİN NOT
+
+Bu manifest v9, sonraki sohbetin tam olarak nerede kaldığımızı
+anlaması için yeterli. Sonraki sohbet:
+
+1. Bu manifesti okuyacak
+2. KAPSUL_MADDE4_v4_20261010.txt'yi okuyacak (kodun tam hali)
+3. **A + C** ile başlayacak (/api/models endpoint + model sıra uyumu)
+4. Sonra **B** (metrics.html HTML temizlik)
+5. Sonra **D** (Events tablosu + DB ilişkisi migration — büyük iş)
+6. En son **E** (Takvim sayfası)
+
+### KRİTİK HATIRLATMA
+Kullanıcının notu: "AI Modellerden doğru yanıt-öneri ve analiz
+almamız için ay süreçlerindeki yenileme ve değişikliklerin
+system promptuna doğru enjekte edilmesi kontrol edilmeli"
+
+Bu notun %100'ü artık tamamlandı (4A+4B+4C+4D).
+Chat df_ozet artık statü-merkezli, UI ile birebir uyumlu,
+Çince sızma yok, kayıp sayı yok.
+
+### KULLANICI BEKLENTİLERİ (v9'da sabitlendi)
+- Betikle çalış (ama 1-3 satırlık düzeltmeler ELLE olabilir)
+- İş mantığı manifest'te tam olmalı (bölüm 4)
+- Cebe atılanlar tablo halinde net olmalı (bölüm 8)
+- Kanıta dayalı: Tahmin değil gözlem
+
+═══════════════════════════════════════════════════════════════════════
+  EK BÖLÜM — TEKNİK NOTLAR (v9 teknik aktarım)
+  Amaç: Oturumlar arası kaybolmasın diye kod/araç tuzakları
+═══════════════════════════════════════════════════════════════════════
+
+## E1. BETİK YAZARKEN KAÇINILACAK TUZAKLAR
+
+### E1.1 PowerShell komutunu .py dosyasına yapıştırma
+- HATA: `.py` dosyasının ilk satırı `cd C:\...` olursa → SyntaxError
+- KURAL: Kullanıcıya iki blok halinde ver:
+  * [PowerShell] `cd ...` + `python ...`
+  * [Python dosyası içeriği] `import` ile başlar
+
+### E1.2 F-string içinde üç tırnak KULLANMA
+- HATA: `f"... {c.execute('''SELECT...''')} ..."` → SyntaxError
+- ÇÖZÜM: Değişkeni önce hesapla, sonra f-string'e koy
+
+### E1.3 Emoji karakterler — doğrudan değil, escape
+- HATA: .py dosyasına doğrudan emoji → bazı editörler bozar
+- ÇÖZÜM: \u26aa (⚪), \U0001f7e2 (🟢), \u2744\ufe0f (❄️)
+- Rapor satırlarında emoji yerine [OK] / [XX] kullan
+
+### E1.4 Ctrl+F ile "bul ve değiştir" TEHLİKELİ
+- Aynı blok 2+ kez geçebilir → yanlış yeri değiştirir
+- ÇÖZÜM: Betik icerik.count(eski) > 1 kontrolü yapar → DURUR
+
+### E1.5 Dosya yolu — Türkçe karakter
+- Araçlar\ klasörü Türkçe karakterli
+- Python betiği Path(__file__).resolve().parent.parent ile üstü bulur
+- Subprocess çağrılarında cwd=PROJE_KOK ver
+
+## E2. DB DAVRANIŞLARI
+
+### E2.1 WAL Mode → Dosya Boyutu Görünmez
+- DELETE + VACUUM sonrası bile .db dosyası KÜÇÜLMEZ
+- Sebep: Silinen veri WAL'de, checkpoint yapılmamış
+- ÇÖZÜM: PRAGMA wal_checkpoint(TRUNCATE) veya Flask restart
+
+### E2.2 TRIM'li Karşılaştırma ŞART
+- isim = "Burcu Kavasoğlu Bilgiç" (adaylar)
+- isim = "Burcu Kavasoğlu Bilgiç " (aday_profil, sonda boşluk)
+- SQL = eşleşmez → yanlışlıkla "yetim" sayılır
+- ÇÖZÜM: TRIM(a.isim) = TRIM(p.isim)
+
+### E2.3 id İlişkisi Kırık
+- adaylar.id ≠ aday_profil.id
+- İlişki isim üzerinden (TRIM'li)
+- İleride migration gerekli (Madde 2)
+
+### E2.4 Yedek İsimlendirme
+- .bak_yetim_temizlik_YYYYMMDD_HHMMSS
+- .bak_status_migrate_YYYYMMDD_HHMMSS
+- .bak_blok_YYYYMMDD_HHMMSS
+- .bak_pillkonum_YYYYMMDD_HHMMSS
+- .bak_excelwatcher_YYYYMMDD_HHMMSS
+- Tüm yedekler .gitignore'da
+
+## E3. FLASK / API DAVRANIŞLARI
+
+### E3.1 Flask Restart ZORUNLU
+- Kod değişikliği sonrası Baslat.bat kapat → yeniden aç
+- Tarayıcıda Ctrl+Shift+R
+- F12 Console: kırmızı hata kontrol
+- Flask terminal: traceback kontrol
+
+### E3.2 Frontend "otomatik" Gönderiyor
+- Chat UI model: "otomatik" string gönderiyordu
+- Backend whitelist kontrolü yapıyor (4C-BUG)
+
+### E3.3 Metrik Sayfası Ayrı Yol
+- routes/metrics.py'de ayrı chat_stream çağrısı
+- KURAL: chat_stream çağrısı içeren TÜM dosyalar taranmalı
+  → Select-String -Path *.py -Pattern "chat_stream"
+
+### E3.4 Excel Watcher ✅ ÇÖZÜLDÜ
+- v9: setInterval kaldırıldı, sadece açılışta 1 kez
+- Excel bildirimi: sadece yeni aday varsa gösterilir
+
+## E4. GPU / IPEX-LLM NOTLARI
+
+### E4.1 ollama ps YANILTICI
+- "100% CPU" → GERÇEK DEĞİL, GPU'da
+- "CONTEXT 0" → GERÇEK DEĞİL, 8192 uygulanıyor
+- Gerçek test 1: Görev Yöneticisi → GPU Compute
+- Gerçek test 2: Aynı soru 2 kez → ilk token süresi farkı
+
+### E4.2 Cold vs Warm Start
+- Cold (1. soru): 60 sn ilk token
+- Warm (2.+): 15 sn ilk token
+- 60 sn → panik yapma, normal
+
+### E4.3 IPEX Ortam Değişkenleri (Baslat.bat)
