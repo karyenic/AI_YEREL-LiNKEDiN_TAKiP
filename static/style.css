@@ -1787,10 +1787,11 @@ main {
    SÜTUN GENİŞLİĞİ AYARLAMA v2 (#aday-tablo)
    ============================================================ */
 #aday-tablo thead th {
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 100;
   user-select: none;
 }
-
 /* Tutamaç: 12px geniş tıklama alanı, görsel çizgi ortada 2px */
 #aday-tablo .col-resizer {
   position: absolute;
@@ -1871,11 +1872,10 @@ body.col-resizing * {
 
 /* --- Aday Listesi başlık satırı --- */
 .aday-listesi-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
-  flex-wrap: wrap;
   margin-bottom: 12px;
 }
 
@@ -1889,8 +1889,10 @@ body.col-resizing * {
 .aday-listesi-arac {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   flex-wrap: wrap;
+  justify-self: center;
 }
 
 .aday-listesi-arac input {
@@ -1929,4 +1931,196 @@ body.col-resizing * {
   .aday-listesi-arac input {
     width: 100%;
   }
+}
+
+
+/* ============================================================
+   BLOK LISTESI (Raporlama sayfasi)
+   ============================================================ */
+
+.blok-pill-satiri {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 12px;
+}
+
+.blok-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(218, 54, 51, 0.12);
+  color: #ff7b72;
+  border: 1px solid rgba(218, 54, 51, 0.4);
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.blok-pill:hover {
+  background: rgba(218, 54, 51, 0.22);
+  border-color: #da3633;
+}
+
+.blok-pill #blok-sayisi {
+  background: rgba(218, 54, 51, 0.3);
+  padding: 1px 9px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.blok-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  padding: 20px;
+}
+
+.blok-modal.hidden {
+  display: none;
+}
+
+.blok-modal-icerik {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+  width: 100%;
+  max-width: 780px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.blok-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.blok-modal-header h3 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 18px;
+}
+
+.blok-modal-kapat {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.blok-modal-kapat:hover {
+  background: var(--panel-bg-2);
+  color: var(--text);
+}
+
+.blok-modal-subtitle {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 10px 0 14px;
+}
+
+.blok-liste {
+  min-height: 100px;
+}
+
+.blok-bos {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 32px 12px;
+}
+
+.blok-tablo {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.blok-tablo th {
+  text-align: left;
+  padding: 10px 8px;
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.blok-tablo td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.blok-tablo .blok-not {
+  color: var(--text-muted);
+  font-size: 13px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-blok-geri {
+  padding: 5px 10px;
+  background: var(--green-bg);
+  color: var(--text-strong);
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-right: 5px;
+}
+
+.btn-blok-geri:hover {
+  filter: brightness(1.15);
+}
+
+.btn-blok-sil {
+  padding: 5px 10px;
+  background: #da3633;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-blok-sil:hover {
+  filter: brightness(1.15);
+}
+
+
+/* Blok pill'ini gizle (artik metrik kartlari satirinda) */
+.blok-pill-satiri {
+  display: none !important;
+}
+
+/* Blok metric kart (kirmizi ton) */
+.metric-card.blok-metric-card {
+  background: rgba(218, 54, 51, 0.08);
+  border-color: rgba(218, 54, 51, 0.35);
+}
+.metric-card.blok-metric-card:hover {
+  background: rgba(218, 54, 51, 0.16);
+  border-color: #da3633;
+}
+.metric-card.blok-metric-card .val {
+  color: #ff7b72;
 }

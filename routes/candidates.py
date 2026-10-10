@@ -99,7 +99,7 @@ def gelisme_ekle(aday_id):
     randevu_tarihi = str(d.get("randevu_tarihi", "")).strip()
     randevu_saati = str(d.get("randevu_saati", "")).strip()
     
-    if not olay_metni and olay_tipi != "Sadece Durum Değiştir":
+    if not olay_metni and olay_tipi not in ("Sadece Durum Değiştir", "Durum Değişikliği"):
         return jsonify({"ok": False, "error": "Gelisme aciklamasi bos."}), 400
     
     # Blok çıkarımı: durum "Blok" içeriyorsa blok=1
@@ -264,3 +264,20 @@ def otomatik_durum(aday_id):
     )
     
     return jsonify({"ok": True, "degisti": degisti})
+
+
+@bp.route("/bloklu", methods=["GET"])
+def bloklu_listele():
+    """Bloklu adaylari listeler (ana listede gizli)."""
+    from core.database import bloklu_adaylari_getir
+    return jsonify(bloklu_adaylari_getir())
+
+
+@bp.route("/<int:aday_id>/blok-kaldir", methods=["PUT"])
+def blok_kaldir(aday_id):
+    """Blok kaydini kaldirir, aday ana listeye doner."""
+    from core.database import aday_blok_kaldir
+    ok = aday_blok_kaldir(aday_id)
+    if not ok:
+        return jsonify({"ok": False, "error": "Aday bulunamadi."}), 404
+    return jsonify({"ok": True, "message": "Blok kaldirildi."})

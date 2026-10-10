@@ -173,4 +173,28 @@ Ayşe toplantıya olumlu yaklaştı."
 
 </section>
 
+
+
+<!-- BLOK LISTESI -->
+<div class="blok-pill-satiri">
+  <button type="button" class="blok-pill" onclick="blokModalAc()">
+    ⛔ Bloklu Adaylar <span id="blok-sayisi">0</span>
+  </button>
+</div>
+
+<div id="blok-modal" class="blok-modal hidden">
+  <div class="blok-modal-icerik">
+    <div class="blok-modal-header">
+      <h3>⛔ Bloklu Adaylar</h3>
+      <button type="button" class="blok-modal-kapat" onclick="blokModalKapat()">✕</button>
+    </div>
+    <div class="blok-modal-subtitle">
+      Bu adaylar ana listede gizlidir ve AI tarafindan degerlendirilmez.
+    </div>
+    <div id="blok-liste" class="blok-liste">
+      <div class="blok-bos">Yukleniyor...</div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

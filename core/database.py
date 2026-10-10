@@ -933,3 +933,27 @@ def aday_durum_otomatik_guncelle(aday_id, davet=0, plan=0, kayit=0, hayir=0):
         c.commit()
         print(f"Otomatik statu: {isim} -> {yeni_durum}")
         return True
+
+
+def bloklu_adaylari_getir():
+    """Bloklanmis adaylari listeler (ana listede gizli olanlar)."""
+    with _conn(ADAY_DB) as c:
+        rows = c.execute("""
+            SELECT id, isim, tarih, blok_tarihi, blok_notu, linkedin_url
+            FROM adaylar
+            WHERE COALESCE(blok, 0) = 1
+            ORDER BY COALESCE(blok_tarihi, '') DESC, id DESC
+        """).fetchall()
+        return [dict(r) for r in rows]
+
+
+def aday_blok_kaldir(aday_id):
+    """Blok kaydini kaldirir (blok=0). Aday ana listeye doner."""
+    with _conn(ADAY_DB) as c:
+        c.execute("""
+            UPDATE adaylar
+            SET blok=0, blok_tarihi=NULL, blok_notu=NULL
+            WHERE id=?
+        """, (aday_id,))
+        c.commit()
+        return c.total_changes > 0

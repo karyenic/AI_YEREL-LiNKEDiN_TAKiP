@@ -1208,7 +1208,6 @@ async function metrikYukle() {
       plan: "Plan",
       kayit: "Kayıt",
       takip: "Takip",
-      is_ariyor: "İş Arıyor",
       hayir: "Hayır"
     };
 
@@ -1251,6 +1250,27 @@ async function metrikYukle() {
         </button>
         `;
     }
+
+    // Blok karti (metrik kartlariyla ayni hizada)
+    try {
+      const _rb = await fetch("/api/candidates/bloklu");
+      if (_rb.ok) {
+        const _bl = await _rb.json();
+        const _bs = Array.isArray(_bl) ? _bl.length : 0;
+        kutu.innerHTML += `
+          <button
+            type="button"
+            class="metric-card blok-metric-card${_bs > 0 ? " metric-active" : ""}"
+            onclick="blokModalAc()"
+            title="Bloklu adaylar\u0131 g\u00f6ster"
+          >
+            <div class="val">${_bs}</div>
+            <div class="lbl">\u26d4 Blok</div>
+            <div class="metric-hint">G\u00f6r\u00fcnt\u00fcle \u2192</div>
+          </button>
+        `;
+      }
+    } catch (_e) { /* sessiz */ }
 
     const oran =
       document.getElementById(
@@ -1446,6 +1466,7 @@ document.addEventListener(
     chatYukle();
     modelleriYukle();
     metrikYukle();
+    blokSayisiGuncelle();
     ollamaDurumGuncelle();
     excelBildirimGoster();
     linkedinUrlIzle();
@@ -1455,10 +1476,14 @@ document.addEventListener(
       5000
     );
 
+    /* v9 Oncelik 2: Excel watcher artik sadece acilista 1 kez calisir.
+       Surekli polling CPU/IO mesgul ediyordu ve AI'i yavaslatiyordu.
+       Tekrar aktif etmek isterseniz bu blogu acin:
     setInterval(
       excelBildirimGoster,
       5000
     );
+    */
 
     const inp =
       document.getElementById(
@@ -1882,11 +1907,13 @@ async function excelBildirimGoster() {
     if (d.zaman === _sonExcelZaman) return;
     _sonExcelZaman = d.zaman;
 
+    // v9: Yeni aday yoksa bildirim gösterme (sadece yeni adayda uyarı)
+    if (!d.eklenen || d.eklenen === 0) return;
+
     // Yeni tarama sonucu → listeyi yenile
     if (typeof adaylariYukle === "function") {
       adaylariYukle();
     }
-
     const main = document.querySelector("main");
     if (!main) return;
 
@@ -2392,3 +2419,135 @@ function otomatikStatuBelirle() {
     baslat();
   }
 })();
+
+
+/* ============================================================
+   BLOK LISTESI (Raporlama sayfasi)
+   ============================================================ */
+
+async function blokSayisiGuncelle() {
+  try {
+    const r = await fetch("/api/candidates/bloklu");
+    if (!r.ok) return;
+    const liste = await r.json();
+    const sayi = Array.isArray(liste) ? liste.length : 0;
+    const el = document.getElementById("blok-sayisi");
+    if (el) el.textContent = String(sayi);
+  } catch (e) { /* sessiz */ }
+}
+
+
+async function blokModalAc() {
+  const modal = document.getElementById("blok-modal");
+  if (!modal) return;
+  modal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+
+  const kutu = document.getElementById("blok-liste");
+  if (kutu) kutu.innerHTML = '<div class="blok-bos">Yukleniyor...</div>';
+
+  try {
+    const r = await fetch("/api/candidates/bloklu");
+    const liste = await r.json();
+
+    if (!Array.isArray(liste) || liste.length === 0) {
+      if (kutu) kutu.innerHTML = '<div class="blok-bos">Bloklu aday yok.</div>';
+      return;
+    }
+    blokListeGoster(liste);
+  } catch (e) {
+    if (kutu) kutu.innerHTML = '<div class="blok-bos">Hata: ' + htmlGuvenli(e.message) + '</div>';
+  }
+}
+
+
+function blokListeGoster(liste) {
+  const kutu = document.getElementById("blok-liste");
+  if (!kutu) return;
+
+  let html = '<table class="blok-tablo"><thead><tr>'
+    + '<th>#</th><th>Isim</th><th>Blok Tarihi</th><th>Not</th>'
+    + '<th style="text-align:right;">Islem</th>'
+    + '</tr></thead><tbody>';
+
+  liste.forEach((a, i) => {
+    const isim = htmlGuvenli(a.isim || "?");
+    const tarih = htmlGuvenli(a.blok_tarihi || "—");
+    const not = htmlGuvenli(a.blok_notu || "—");
+    const id = Number(a.id);
+    const isimJs = isim.replace(/'/g, "\\'");
+
+    html += '<tr>'
+      + '<td>' + (i + 1) + '</td>'
+      + '<td><strong>' + isim + '</strong></td>'
+      + '<td>' + tarih + '</td>'
+      + '<td class="blok-not" title="' + not + '">' + not + '</td>'
+      + '<td style="text-align:right; white-space:nowrap;">'
+      + '<button class="btn-blok-geri" onclick="blokGeriAl(' + id + ', \'' + isimJs + '\')" title="Bloku kaldir">↺ Geri Al</button>'
+      + '<button class="btn-blok-sil" onclick="blokSilOnay(' + id + ', \'' + isimJs + '\')" title="Kalici sil">🗑 Sil</button>'
+      + '</td></tr>';
+  });
+
+  html += '</tbody></table>';
+  kutu.innerHTML = html;
+}
+
+
+function blokModalKapat() {
+  const modal = document.getElementById("blok-modal");
+  if (!modal) return;
+  modal.classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+
+async function blokGeriAl(id, isim) {
+  if (!confirm('"' + isim + '" adli adayin bloku kaldirilsin mi?\n\nAday ana listeye geri doner.')) return;
+
+  try {
+    const r = await fetch('/api/candidates/' + id + '/blok-kaldir', { method: 'PUT' });
+    const d = await r.json();
+
+    if (!r.ok || !d.ok) {
+      alert('Hata: ' + (d.error || 'Islem basarisiz.'));
+      return;
+    }
+
+    await blokModalAc();
+    blokSayisiGuncelle();
+
+    if (typeof adaylariYukle === "function") adaylariYukle();
+  } catch (e) {
+    alert('Hata: ' + e.message);
+  }
+}
+
+
+async function blokSilOnay(id, isim) {
+  if (!confirm('"' + isim + '" adli aday KALICI olarak silinsin mi?\n\nBu islem geri alinamaz!')) return;
+
+  try {
+    const r = await fetch('/api/candidates/' + id, { method: 'DELETE' });
+    const d = await r.json();
+
+    if (!d.ok) {
+      alert('Silme basarisiz.');
+      return;
+    }
+
+    await blokModalAc();
+    blokSayisiGuncelle();
+  } catch (e) {
+    alert('Hata: ' + e.message);
+  }
+}
+
+
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") {
+    const modal = document.getElementById("blok-modal");
+    if (modal && !modal.classList.contains("hidden")) {
+      blokModalKapat();
+    }
+  }
+});
