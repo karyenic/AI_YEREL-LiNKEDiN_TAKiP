@@ -1156,23 +1156,31 @@ async function modelleriYukle() {
   otomatikOpt.textContent = "🤖 Otomatik (Akıllı Seçim)";
   sel.appendChild(otomatikOpt);
 
-const modeller = [
-    "qwen2.5:14b",
-    "qwen2.5:7b",
-    "llama3.1:latest",
-    "qwen2.5:3b"
-];
+  // Model listesi: tek kaynak -> /api/models (config.PRIMARY_MODELS)
+  let modeller = [];
+  let varsayilan = "";
+
+  try {
+    const r = await fetch("/api/models");
+    const d = await r.json();
+    modeller = d.models || [];
+    varsayilan = d.default || "";
+  } catch (e) {
+    // Endpoint erisilemezse eski liste (guvenli fallback)
+    modeller = [
+      "qwen2.5:14b",
+      "qwen2.5:7b",
+      "qwen2.5:3b",
+      "llama3.1:latest"
+    ];
+    varsayilan = "qwen2.5:14b";
+  }
 
   for (const m of modeller) {
-
-    const o =
-      document.createElement(
-        "option"
-      );
-
+    const o = document.createElement("option");
     o.value = m;
     o.textContent = m;
-
+    if (m === varsayilan) o.selected = true;
     sel.appendChild(o);
   }
 }

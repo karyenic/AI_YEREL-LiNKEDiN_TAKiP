@@ -42,7 +42,7 @@ FALLBACK_MODELS = [
 # --- Model BaÅŸÄ±na Context (num_ctx) ---
 # Daha bÃ¼yÃ¼k context = daha fazla KV cache = daha yavaÅŸ
 MODEL_CONTEXT_MAP = {
-    "qwen2.5:14b": 8192,
+    "qwen2.5:14b": 12288,  # v10 FINAL
     "qwen2.5:7b": 8192,
     "qwen2.5:3b": 4096,        # 3B için 4096 yeterli
     "llama3.1:latest": 8192,

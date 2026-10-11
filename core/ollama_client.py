@@ -129,7 +129,10 @@ Aksiyon: [Somut, tarihli öneri]
 3. CATEGORY PRECISION: Use ONLY the 8 official funnel categories listed above.
 4. LANGUAGE: CRITICAL - Your ENTIRE reply must be in fluent, natural, professional Turkish. Never reply in English.
 5. CONCISE: No long essays. 5-10 lines maximum per answer (unless a weekly schedule is explicitly requested).
-6. NO STATISTICS PADDING: If user asks a simple count, answer with the count only."""
+6. NO STATISTICS PADDING: If user asks a simple count, answer with the count only.
+7. DATA ACCESS: Candidate contact details (telefon, email, adres) and full history ARE provided in the CANDIDATE DATA section above. ALWAYS scan that section carefully BEFORE saying any data is missing.
+8. OUTPUT LANGUAGE: Your entire response must be in Turkish. Every word, every list, every explanation. No exceptions.
+9. NO LATEX / MARKDOWN MATH: Write numbers and arithmetic in plain text. Never use \[ \], $...$, \frac, \sum, or any LaTeX. Example: "29 + 33 + 28 + 1 + 3 = 94" (plain text)."""
 
 
 def chat_stream(mesajlar, model=DEFAULT_MODEL, fallback=DEFAULT_FALLBACK, durum=None, profil=None):

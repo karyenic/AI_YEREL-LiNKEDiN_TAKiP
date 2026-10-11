@@ -99,6 +99,14 @@ def ollama_warmup():
     ok = ollama_client.warm_up(m)
     return jsonify({"ok": ok, "model": m})
 
+@app.route("/api/models")
+def api_models():
+    """UI icin model listesi (tek kaynak: config.PRIMARY_MODELS)."""
+    from config import PRIMARY_MODELS
+    return jsonify({
+        "models": list(PRIMARY_MODELS),
+        "default": DEFAULT_MODEL
+    })
 
 def _arka_plan():
     print("Ollama warm-up basliyor...")

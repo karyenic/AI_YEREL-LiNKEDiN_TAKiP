@@ -115,6 +115,50 @@ def stream():
                 f"  {_s_item['tam']}: {statu_sayilari.get(_s_item['tam'], 0)}"
             )
         basliklar.append(f"  (Blok: {_blok_sayisi} - gizli)")
+
+        # -- YENI v10 FINAL: iki BAGIMSIZ liste (email / telefon) --
+        _tel_s, _mail_s, _adres_s, _bos_s = 0, 0, 0, 0
+        _email_liste = []
+        _tel_liste = []
+        try:
+            _conn_c = sqlite3.connect(str(ADAY_DB))
+            _conn_c.row_factory = sqlite3.Row
+            _c_c = _conn_c.cursor()
+            _p_rows = _c_c.execute(
+                "SELECT isim, telefon, email, adres FROM aday_profil ORDER BY isim"
+            ).fetchall()
+            for _p in _p_rows:
+                _n = (_p["isim"] or "").strip()
+                _t = (_p["telefon"] or "").strip()
+                _m = (_p["email"] or "").strip()
+                _a = (_p["adres"] or "").strip()
+                if _t: _tel_s += 1
+                if _m: _mail_s += 1
+                if _a: _adres_s += 1
+                if not (_t or _m or _a): _bos_s += 1
+                if _m:
+                    _ek = f" | ayrica tel: {_t}" if _t else ""
+                    _email_liste.append(f"{_n} ({_m}){_ek}")
+                if _t:
+                    _ek = f" | ayrica email: {_m}" if _m else ""
+                    _tel_liste.append(f"{_n} ({_t}){_ek}")
+            _conn_c.close()
+        except Exception as _e:
+            print(f"[UYARI] Iletisim ozeti okunamadi: {_e}")
+
+        basliklar.append("")
+        basliklar.append("=== TUM EMAILI OLANLAR (bagimsiz liste) ===")
+        for _x in _email_liste: basliklar.append(f"  - {_x}")
+        basliklar.append("")
+        basliklar.append("=== TUM TELEFONU OLANLAR (bagimsiz liste) ===")
+        for _x in _tel_liste: basliklar.append(f"  - {_x}")
+        basliklar.append("")
+        basliklar.append("=== TOPLAM SAYILAR (onceden hesaplandi) ===")
+        basliklar.append(f"  Email kayitli TOPLAM: {_mail_s}")
+        basliklar.append(f"  Telefon kayitli TOPLAM: {_tel_s}")
+        basliklar.append(f"  Adres kayitli TOPLAM: {_adres_s}")
+        basliklar.append(f"  Hic iletisim bilgisi olmayan: {_bos_s}")
+
         basliklar.append("")
         basliklar.append(
             f"DETAYLI LISTE (ilk {ADAY_PROMPT_LIMIT} aday, son gelismeleriyle):"
@@ -128,7 +172,13 @@ def stream():
                 kart = aday_karti_getir(aday.get("id"))
                 if kart and kart.get("gecmis"):
                     durum = kart.get("durum", "Aktif")
-                    satirlar.append(f"{i}. {isim} (durum: {durum})")
+                    _tel = (kart.get("telefon") or "").strip()
+                    _mail = (kart.get("email") or "").strip()
+                    _parcalar = []
+                    if _tel: _parcalar.append(f"Tel:{_tel}")
+                    if _mail: _parcalar.append(f"Mail:{_mail}")
+                    _ek = (" " + " ".join(_parcalar)) if _parcalar else ""
+                    satirlar.append(f"{i}. {isim} [{durum}]{_ek}")
                     for olay in kart["gecmis"][-ADAY_OLAY_LIMIT:]:
                         tarih = olay.get("tarih", "")
                         tip = olay.get("olay_tipi", "")

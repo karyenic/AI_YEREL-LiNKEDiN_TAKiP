@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 chcp 65001 >nul
 title LinkedIn Takip - Flask
 color 0A
@@ -32,8 +32,8 @@ REM 3. IPEX LLM icin zorunlu sistem ayarlari
 set ZES_ENABLE_SYSMAN=1
 set SYCL_CACHE_PERSISTENT=1
 set SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1
-set IPEX_LLM_NUM_CTX=8192
-set OLLAMA_CONTEXT_LENGTH=8192
+set IPEX_LLM_NUM_CTX=12288
+set OLLAMA_CONTEXT_LENGTH=12288
 
 REM 5. Proxy'yi devre disi birak (localhost baglantilari icin)
 set no_proxy=localhost,127.0.0.1
