@@ -1,4 +1,4 @@
-import sqlite3
+﻿import sqlite3
 from datetime import datetime
 from config import ADAY_DB, CHAT_DB, ADAY_STATULERI
 
@@ -109,6 +109,7 @@ def init_all():
                 telefon TEXT DEFAULT '',
                 email TEXT DEFAULT '',
                 adres TEXT DEFAULT '',
+                durum TEXT DEFAULT '',         -- v11 D2
                 aktif INTEGER DEFAULT 1,
                 created_at TEXT,
                 updated_at TEXT
@@ -141,6 +142,7 @@ def init_all():
 
         # Önceden migration yapılmış sistemlerde durum kolonu yoksa ekle.
         _kolon_ekle(c, "aday_olaylari", "durum", "TEXT DEFAULT ''")
+        _kolon_ekle(c, "aday_profil", "durum", "TEXT DEFAULT ''")  # v11 D2
         _kolon_ekle(c, "adaylar", "blok", "INTEGER DEFAULT 0")
         _kolon_ekle(c, "adaylar", "blok_tarihi", "TEXT")
         _kolon_ekle(c, "adaylar", "blok_notu", "TEXT")
@@ -513,13 +515,47 @@ def aday_ekle(
         return False
 
 def aday_sil(aday_id):
-    # Eski davranış korunuyor.
+    """Adayi ve TUM bagli kayitlarini siler (cascade).
+
+    v11 D1: adaylar.id -> aday_olaylari.kaynak_kayit_id,
+            aday_olaylari.aday_id -> aday_profil.id
+    """
     with _conn(ADAY_DB) as c:
-        c.execute(
-            "DELETE FROM adaylar WHERE id=?",
+        # 1. Ismi al
+        row = c.execute(
+            "SELECT isim FROM adaylar WHERE id=?",
             (aday_id,)
-        )
+        ).fetchone()
+
+        if not row:
+            return False
+
+        isim = (row["isim"] or "").strip()
+
+        # 2. Bu adayin profil_id'sini bul
+        profil_id = None
+        if isim:
+            profil_row = c.execute(
+                "SELECT id FROM aday_profil WHERE LOWER(TRIM(isim))=LOWER(TRIM(?)) LIMIT 1",
+                (isim,)
+            ).fetchone()
+            if profil_row:
+                profil_id = profil_row["id"]
+
+        # 3. aday_olaylari sil (iki yonlu)
+        c.execute("DELETE FROM aday_olaylari WHERE kaynak_kayit_id=?", (aday_id,))
+        if profil_id is not None:
+            c.execute("DELETE FROM aday_olaylari WHERE aday_id=?", (profil_id,))
+
+        # 4. aday_profil sil
+        if profil_id is not None:
+            c.execute("DELETE FROM aday_profil WHERE id=?", (profil_id,))
+
+        # 5. adaylar sil
+        c.execute("DELETE FROM adaylar WHERE id=?", (aday_id,))
+
         c.commit()
+        return True
 
 
 def tum_adaylari_sil():
