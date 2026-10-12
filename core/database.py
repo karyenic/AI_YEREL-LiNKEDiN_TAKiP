@@ -897,7 +897,7 @@ def aday_linkedin_guncelle(aday_id, linkedin_url):
 
 
 
-def aday_durum_otomatik_guncelle(aday_id, davet=0, plan=0, kayit=0, hayir=0):
+def aday_durum_otomatik_guncelle(aday_id, davet=0, plan=0, kayit=0, hayir=0, net_hayir=0):
     
     """Checkbox'lara gore statuyu otomatik gunceller.
 
@@ -930,9 +930,15 @@ def aday_durum_otomatik_guncelle(aday_id, davet=0, plan=0, kayit=0, hayir=0):
         hayir_t = max(int(eski["hayir"] or 0), int(hayir or 0))
 
         yeni_durum = None
+        hedef_blok = 0
         if hayir_t == 1:
-            return False  # Manuel secim gerekli (DeepFreeze veya Blok)
-        if plan_t == 1 and kayit_t == 1:
+            # v11: NET hayir -> Blok, yumusak hayir -> DeepFreeze
+            if int(net_hayir or 0) == 1:
+                yeni_durum = _statu_adi("blok")
+                hedef_blok = 1
+            else:
+                yeni_durum = _statu_adi("deepfreeze")
+        elif plan_t == 1 and kayit_t == 1:
             yeni_durum = _statu_adi("sg")
         elif plan_t == 1 and kayit_t == 0:
             yeni_durum = _statu_adi("takip")
@@ -966,8 +972,15 @@ def aday_durum_otomatik_guncelle(aday_id, davet=0, plan=0, kayit=0, hayir=0):
                 """,
                 (isim, yeni_durum, now, now)
             )
+        # v11: NET hayir ise blok=1 set et
+        if hedef_blok == 1:
+            c.execute(
+                "UPDATE adaylar SET blok=1, blok_tarihi=?, blok_notu=? WHERE id=?",
+                (now, "NET hayir - otomatik", aday_id)
+            )
+
         c.commit()
-        print(f"Otomatik statu: {isim} -> {yeni_durum}")
+        print(f"Otomatik statu: {isim} -> {yeni_durum}" + (" [BLOK]" if hedef_blok else ""))
         return True
 
 

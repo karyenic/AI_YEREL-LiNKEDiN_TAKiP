@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    GENEL
    ============================================================ */
 
@@ -1938,40 +1938,6 @@ body.col-resizing * {
    BLOK LISTESI (Raporlama sayfasi)
    ============================================================ */
 
-.blok-pill-satiri {
-  display: flex;
-  justify-content: flex-start;
-  margin-top: 12px;
-}
-
-.blok-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: rgba(218, 54, 51, 0.12);
-  color: #ff7b72;
-  border: 1px solid rgba(218, 54, 51, 0.4);
-  border-radius: 20px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.blok-pill:hover {
-  background: rgba(218, 54, 51, 0.22);
-  border-color: #da3633;
-}
-
-.blok-pill #blok-sayisi {
-  background: rgba(218, 54, 51, 0.3);
-  padding: 1px 9px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
 .blok-modal {
   position: fixed;
   inset: 0;
@@ -2106,11 +2072,6 @@ body.col-resizing * {
   filter: brightness(1.15);
 }
 
-
-/* Blok pill'ini gizle (artik metrik kartlari satirinda) */
-.blok-pill-satiri {
-  display: none !important;
-}
 
 /* Blok metric kart (kirmizi ton) */
 .metric-card.blok-metric-card {

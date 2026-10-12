@@ -1,4 +1,4 @@
-from pathlib import Path
+﻿from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
@@ -151,8 +151,12 @@ OLAY_TIPLERI = [
 ]
 
 # --- Statu Gecis Kurallari (Otomatik) ---
+# v11: NET hayir -> blok, yumusak hayir -> deepfreeze
+# hayir=1 + net_hayir=1 -> blok
+# hayir=1 + net_hayir=0 -> deepfreeze
 STATU_GECIS_KURALLARI = [
-    {"kosul": "hayir>=1",           "hedef": "deepfreeze", "tip": "otomatik"},
+    {"kosul": "net_hayir=1",        "hedef": "blok",       "tip": "otomatik"},
+    {"kosul": "hayir=1",            "hedef": "deepfreeze", "tip": "otomatik"},
     {"kosul": "plan=1 and kayit=1", "hedef": "sg",         "tip": "otomatik"},
     {"kosul": "plan=1 and kayit=0", "hedef": "takip",      "tip": "otomatik"},
     {"kosul": "plan=0 and davet=1", "hedef": "aktif",      "tip": "otomatik"},

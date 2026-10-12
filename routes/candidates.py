@@ -102,9 +102,21 @@ def gelisme_ekle(aday_id):
     if not olay_metni and olay_tipi not in ("Sadece Durum Değiştir", "Durum Değişikliği"):
         return jsonify({"ok": False, "error": "Gelisme aciklamasi bos."}), 400
     
-    # Blok çıkarımı: durum "Blok" içeriyorsa blok=1
+    # v11: NET / yumusak hayir ayrimi (metin on kontrol)
+    _metin_erken = (olay_metni or "").lower()
+    _net_kelimeler = [
+        "net hayır", "net hayir",
+        "kesinlikle hayır", "kesinlikle hayir",
+        "kesin hayır", "kesin hayir",
+        "asla", "katiyen", "reddetti",
+    ]
+    net_hayir = 1 if any(k in _metin_erken for k in _net_kelimeler) else 0
+
+    # Blok çıkarımı: durum "Blok" içeriyorsa VEYA NET hayir denmisse blok=1
     blok_param = 0
     if durum and ("blok" in durum.lower() or "⛔" in durum):
+        blok_param = 1
+    if net_hayir == 1:
         blok_param = 1
 
     ok, msg = aday_gelisme_ekle(
@@ -210,7 +222,8 @@ def gelisme_ekle(aday_id):
         from core.database import aday_durum_otomatik_guncelle
         aday_durum_otomatik_guncelle(
             aday_id,
-            davet=davet, plan=plan, kayit=kayit, hayir=hayir
+            davet=davet, plan=plan, kayit=kayit, hayir=hayir,
+            net_hayir=net_hayir
         )
     except Exception as e:
         print(f"[UYARI] Otomatik statu hatasi: {e}")
