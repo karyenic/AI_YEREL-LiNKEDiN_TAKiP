@@ -929,6 +929,13 @@ def aday_durum_otomatik_guncelle(aday_id, davet=0, plan=0, kayit=0, hayir=0, net
         kayit_t = max(int(eski["kayit"] or 0), int(kayit or 0))
         hayir_t = max(int(eski["hayir"] or 0), int(hayir or 0))
 
+        # v11c: Mevcut statuyu erken oku (davet kurali kosullandirma icin)
+        _profil_erken = c.execute(
+            "SELECT durum FROM aday_profil WHERE isim=? LIMIT 1",
+            (isim,)
+        ).fetchone()
+        _mevcut_durum = (_profil_erken["durum"] or "") if _profil_erken else ""
+
         yeni_durum = None
         hedef_blok = 0
         if hayir_t == 1:
@@ -943,7 +950,14 @@ def aday_durum_otomatik_guncelle(aday_id, davet=0, plan=0, kayit=0, hayir=0, net
         elif plan_t == 1 and kayit_t == 0:
             yeni_durum = _statu_adi("takip")
         elif plan_t == 0 and davet_t == 1:
-            yeni_durum = _statu_adi("aktif")
+            # v11c: Sadece "Değerlendirilecek" -> Aktif. Diger statuler korunur.
+            _md_lower = _mevcut_durum.lower()
+            if ("değerlendirilecek" in _md_lower or
+                "degerlendirilecek" in _md_lower or
+                not _mevcut_durum.strip()):
+                yeni_durum = _statu_adi("aktif")
+            else:
+                return False  # Sıcak/Aktif zaten, degistirme
         else:
             return False  # Statu degismedi
 
@@ -1006,3 +1020,113 @@ def aday_blok_kaldir(aday_id):
         """, (aday_id,))
         c.commit()
         return c.total_changes > 0
+
+
+def randevu_hatirlatmalari_getir():
+    """v11: 4 asamali randevu bildirim motoru (READ ONLY).
+    Sayfa acilisinda cagrilir, anlik hesaplar."""
+    from datetime import datetime as _dt, timedelta as _td, date as _date
+    from config import OLAY_TIPLERI
+
+    # v11b: Sadece KULLANICI AKSIYONLARI kapanis sayilir.
+    # Not/Davet/Aday Kaydi/Excel Gecmisi SAYILMAZ.
+    _kapanis_kodlar = ("plan", "kayit", "hayir", "takip_g", "sadece_durum")
+    KAPANIS_TIPLERI = tuple(
+        t["html_value"] for t in OLAY_TIPLERI if t["kod"] in _kapanis_kodlar
+    )
+
+    def _tarih_parse(s):
+        if not s:
+            return None
+        s = str(s).strip()
+        if not s:
+            return None
+        for f in ("%Y-%m-%d", "%d %m %y", "%d.%m.%Y", "%d.%m.%y",
+                  "%d/%m/%Y", "%d/%m/%y", "%d %m %Y", "%Y/%m/%d"):
+            try:
+                return _dt.strptime(s, f).date()
+            except ValueError:
+                continue
+        return None
+
+    bugun = _date.today()
+    yarin = bugun + _td(days=1)
+
+    sonuc = []
+
+    with _conn(ADAY_DB) as c:
+        adaylar = c.execute("""
+            SELECT id, isim, randevu_tarihi, randevu_saati
+            FROM adaylar
+            WHERE COALESCE(blok,0)=0
+              AND COALESCE(hayir,0)=0
+              AND randevu_tarihi IS NOT NULL
+              AND TRIM(randevu_tarihi) <> ''
+            ORDER BY randevu_tarihi, randevu_saati
+        """).fetchall()
+
+        for a in adaylar:
+            r_tarih = _tarih_parse(a["randevu_tarihi"])
+            if r_tarih is None:
+                continue
+
+            r_saat = (a["randevu_saati"] or "").strip()
+            isim = (a["isim"] or "?").strip()
+
+            # v11b: Kayit kontrolu — sadece randevu tarihinden
+            # SONRAKI gunlerde + sadece KAPANIS tipi olaylar.
+            # Ayni gun olaylar ve otomatik olaylar kapanis SAYILMAZ.
+            kayit_girildi = False
+            olaylar = c.execute("""
+                SELECT tarih, olay_tipi FROM aday_olaylari
+                WHERE kaynak_kayit_id = ?
+            """, (a["id"],)).fetchall()
+            for o in olaylar:
+                o_t = _tarih_parse(o["tarih"])
+                o_tip = (o["olay_tipi"] or "").strip()
+                if o_t and o_t > r_tarih and o_tip in KAPANIS_TIPLERI:
+                    kayit_girildi = True
+                    break
+
+            if kayit_girildi:
+                continue
+
+            # Asama belirle
+            if r_tarih > yarin:
+                asama, ikon = 1, "\U0001F4C5"
+                metin = f"{isim} ile {r_tarih.strftime('%d.%m.%Y')}"
+                if r_saat:
+                    metin += f" saat {r_saat}"
+                metin += " randevu yapildi"
+            elif r_tarih == yarin:
+                asama, ikon = 2, "\u23F0"
+                metin = f"Yarin {isim} ile {r_tarih.strftime('%d.%m.%Y')}"
+                if r_saat:
+                    metin += f" saat {r_saat}"
+                metin += " randevu var"
+            elif r_tarih == bugun:
+                asama, ikon = 3, "\U0001F514"
+                metin = f"Bugun {isim} ile {r_tarih.strftime('%d.%m.%Y')}"
+                if r_saat:
+                    metin += f" saat {r_saat}"
+                metin += " randevu var"
+            else:
+                asama, ikon = 4, "\u2757"
+                gecikme = (bugun - r_tarih).days
+                metin = f"{isim} randevu durumunu kaydedin"
+                if gecikme > 1:
+                    metin += f" ({gecikme} gun gecikti)"
+
+            sonuc.append({
+                "aday_id": a["id"],
+                "isim": isim,
+                "asama": asama,
+                "ikon": ikon,
+                "metin": metin,
+                "tarih": r_tarih.strftime("%d.%m.%Y"),
+                "saat": r_saat,
+            })
+
+    sonuc.sort(key=lambda h: (-h["asama"], h["tarih"]))
+    return sonuc
+

@@ -2085,3 +2085,43 @@ body.col-resizing * {
 .metric-card.blok-metric-card .val {
   color: #ff7b72;
 }
+
+
+/* v11: RANDEVU HATIRLATMALARI (Raporlama sayfasi) */
+.hatirlatma-satir {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: var(--panel-bg-2, #1e1e1e);
+  border-radius: 8px;
+  border-left: 3px solid var(--border, #333);
+  font-size: 14px;
+  line-height: 1.4;
+}
+.hatirlatma-satir:last-child { margin-bottom: 0; }
+
+.hatirlatma-ikon {
+  flex-shrink: 0;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.hatirlatma-metin {
+  color: var(--text, #ddd);
+}
+
+.hatirlatma-asama-1 { border-left-color: #4a9eff; }
+.hatirlatma-asama-2 { border-left-color: #f0c419; }
+.hatirlatma-asama-3 { border-left-color: #ff9800; }
+
+.hatirlatma-asama-4 {
+  border-left-color: #da3633;
+  background: rgba(218, 54, 51, 0.10);
+}
+.hatirlatma-asama-4 .hatirlatma-metin {
+  color: #ffb3b0;
+  font-weight: 500;
+}
+

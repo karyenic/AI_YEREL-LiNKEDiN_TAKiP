@@ -479,6 +479,9 @@ async function gelismeKaydet() {
           olay_metni,
           durum,
           // Checkbox'lar (kart gelisme formundan)
+          // v11: Randevu tarihi/saati (frontend input -> POST)
+          randevu_tarihi: document.getElementById("gelisme-randevu-tarihi")?.value || "",
+          randevu_saati: document.getElementById("gelisme-randevu-saati")?.value || "",
           davet: document.getElementById("gelisme-davet")?.checked ? 1 : 0,
           plan: document.getElementById("gelisme-plan")?.checked ? 1 : 0,
           kayit: document.getElementById("gelisme-kayit")?.checked ? 1 : 0,
@@ -1474,9 +1477,15 @@ document.addEventListener(
     chatYukle();
     modelleriYukle();
     metrikYukle();
+    hatirlatmalariYukle();
     blokSayisiGuncelle();
     ollamaDurumGuncelle();
-    excelBildirimGoster();
+    // v11: Excel bildirimi sadece tarayici acilisinda 1 kez.
+    // Sayfa degisince veya yenilendiginde tekrar gosterilmez.
+    if (!sessionStorage.getItem("excel_bildirim_gosterildi")) {
+      excelBildirimGoster();
+      sessionStorage.setItem("excel_bildirim_gosterildi", "1");
+    }
     linkedinUrlIzle();
 
     setInterval(
@@ -1901,9 +1910,10 @@ function sirala(kolon) {
 }
 
 
-let _sonExcelZaman = null;
-
+// v11: Sayfa yenilemelerinde tekrar bildirim gostermemek icin localStorage
+let _sonExcelZaman = localStorage.getItem("excel_son_zaman") || null;
 async function excelBildirimGoster() {
+
   try {
     const r = await fetch("/api/excel/durum");
     if (!r.ok) return;
@@ -1914,6 +1924,7 @@ async function excelBildirimGoster() {
     // AynÄ± zaman damgasÄ± â†’ atla (bildirim tekrar etmesin)
     if (d.zaman === _sonExcelZaman) return;
     _sonExcelZaman = d.zaman;
+    localStorage.setItem("excel_son_zaman", d.zaman);
 
     // v9: Yeni aday yoksa bildirim gÃ¶sterme (sadece yeni adayda uyarÄ±)
     if (!d.eklenen || d.eklenen === 0) return;
@@ -2559,3 +2570,38 @@ document.addEventListener("keydown", function(e) {
     }
   }
 });
+
+
+async function hatirlatmalariYukle() {
+  const kutu = document.getElementById("hatirlatmalar-listesi");
+  if (!kutu) return;
+
+  try {
+    const r = await fetch("/api/metrics/hatirlatmalar");
+    if (!r.ok) return;
+    const liste = await r.json();
+
+    if (!Array.isArray(liste) || liste.length === 0) {
+      kutu.innerHTML = `
+        <div class="report-empty">
+          <div class="report-empty-icon">í ½í´”</div>
+          <strong>Åžimdilik kayÄ±tlÄ± hatÄ±rlatma yok.</strong>
+          <span>YaklaÅŸan randevular burada gÃ¶rÃ¼necek.</span>
+        </div>`;
+      return;
+    }
+
+    kutu.innerHTML = liste.map(h => {
+      const guvenli = String(h.metin || "").replace(/</g, "&lt;");
+      const ikon = h.ikon || "í ½í´”";
+      return `
+        <div class="hatirlatma-satir hatirlatma-asama-${h.asama}">
+          <span class="hatirlatma-ikon">${ikon}</span>
+          <span class="hatirlatma-metin">${guvenli}</span>
+        </div>`;
+    }).join("");
+  } catch (e) {
+    console.error("Hatirlatma yukleme hatasi:", e);
+  }
+}
+

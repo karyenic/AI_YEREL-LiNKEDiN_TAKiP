@@ -140,3 +140,11 @@ Be concise and decision-ready — toplam 10-12 satırı geçme. Rakam uydurma, s
         return jsonify({"ozet": metin.strip(), "huni": h})
     except Exception as e:
         return jsonify({"ozet": f"Strateji oluşturulamadı: {e}"}), 500
+
+
+@bp.route("/hatirlatmalar", methods=["GET"])
+def hatirlatmalar():
+    """v11: 4 asamali randevu bildirim listesi."""
+    from core.database import randevu_hatirlatmalari_getir
+    return jsonify(randevu_hatirlatmalari_getir())
+
