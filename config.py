@@ -14,16 +14,14 @@ IZLENEN_EXCEL = DATA_DIR / "izlenen_adaylar.xlsx"
 # Ollama ayarlari
 OLLAMA_HOST = "http://127.0.0.1:11434"
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # MODEL AYARLARI â€” Intel Arc 140V (16 GB VRAM) iÃ§in optimize
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 # --- Aktif Modeller ---
 # Ana sohbet modeli (kalite odaklÄ±)
-DEFAULT_MODEL = "qwen2.5:14b"
+DEFAULT_MODEL = "qwen2.5:14b"  # trendyol-7b yerine
 
 # Model Ã§Ã¶kerse veya bulunamazsa devreye girer
-DEFAULT_FALLBACK = "qwen2.5:7b"
+DEFAULT_FALLBACK = "qwen2.5:14b"  # trendyol-7b yerine
 
 # ArayÃ¼z dropdown'Ä±nda gÃ¶sterilecek modeller (sÄ±ralÄ±)
 PRIMARY_MODELS = [
@@ -46,6 +44,7 @@ MODEL_CONTEXT_MAP = {
     "qwen2.5:7b": 8192,
     "qwen2.5:3b": 4096,        # 3B için 4096 yeterli
     "llama3.1:latest": 8192,
+    "trendyol-7b": 12288,
 }
 
 # --- Model BaÅŸÄ±na Temperature ---
@@ -55,6 +54,7 @@ MODEL_TEMP_MAP = {
     "qwen2.5:7b": 0.45,        # fallback
     "qwen2.5:3b": 0.40,        # hızlı işler
     "llama3.1:latest": 0.50,   # alternatif
+    "trendyol-7b": 0.3,        # alternatif - denenecek
 }
 
 # --- Genel Sabitler ---
@@ -79,6 +79,7 @@ MODEL_TOP_P_MAP = {
     "qwen2.5:7b": 0.90,
     "qwen2.5:3b": 0.95,
     "llama3.1:latest": 0.90,
+    "trendyol-7b": 0.90,
 }
 
 # --- Model Basina Top-k ---
@@ -87,6 +88,7 @@ MODEL_TOP_K_MAP = {
     "qwen2.5:7b": 40,
     "qwen2.5:3b": 50,
     "llama3.1:latest": 40,
+    "trendyol-7b": 40,
 }
 
 # --- Model Basina Repeat Penalty ---
@@ -95,6 +97,7 @@ MODEL_REPEAT_PENALTY_MAP = {
     "qwen2.5:7b": 1.15,
     "qwen2.5:3b": 1.10,
     "llama3.1:latest": 1.10,
+    "trendyol-7b": 1.15,
 }
 
 # --- Model Basina Repeat Last N ---
@@ -103,6 +106,7 @@ MODEL_REPEAT_LAST_N_MAP = {
     "qwen2.5:7b": 256,
     "qwen2.5:3b": 256,
     "llama3.1:latest": 256,
+    "trendyol-7b": 256,
 }
 
 # --- Analiz Profili (strateji/degerlendirme istekleri icin dusuk temp) ---
@@ -111,6 +115,7 @@ ANALIZ_TEMP_MAP = {
     "qwen2.5:7b": 0.25,
     "qwen2.5:3b": 0.30,
     "llama3.1:latest": 0.25,
+    "trendyol-7b": 0.25,
 }
 
 # --- Sohbet Baglami ---

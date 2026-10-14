@@ -1130,3 +1130,50 @@ def randevu_hatirlatmalari_getir():
     sonuc.sort(key=lambda h: (-h["asama"], h["tarih"]))
     return sonuc
 
+
+# ─── v12f: Akilli tarih parser ───
+def tarih_parse(s):
+    """Esnek tarih parser. Farkli formatlari sirayla dener.
+    ISO (2026-10-12), TR (30.09.2026), TR-kisa (11 10 26), vs.
+    Yanlis format'tan kaynakli hatalari engeller.
+    """
+    if s is None:
+        return None
+    s = str(s).strip()
+    if not s:
+        return None
+    try:
+        import pandas as pd
+    except ImportError:
+        return None
+    # 1. ISO format (yil-ay-gun): 2026-10-12
+    try:
+        return pd.to_datetime(s, format="%Y-%m-%d")
+    except Exception:
+        pass
+    # 2. TR noktali (gun.ay.yil): 30.09.2026
+    try:
+        return pd.to_datetime(s, format="%d.%m.%Y")
+    except Exception:
+        pass
+    # 3. TR kisa bosluklu (gun ay yil-2hane): 11 10 26
+    try:
+        return pd.to_datetime(s, format="%d %m %y")
+    except Exception:
+        pass
+    # 4. TR kisa noktali: 11.10.26
+    try:
+        return pd.to_datetime(s, format="%d.%m.%y")
+    except Exception:
+        pass
+    # 5. ISO tam (saatli): 2026-10-12 15:30:00
+    try:
+        return pd.to_datetime(s, format="%Y-%m-%d %H:%M:%S")
+    except Exception:
+        pass
+    # 6. Son care: dayfirst ile esnek
+    try:
+        return pd.to_datetime(s, dayfirst=True, errors="coerce")
+    except Exception:
+        return None
+
