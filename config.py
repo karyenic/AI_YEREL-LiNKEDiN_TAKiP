@@ -21,7 +21,7 @@ OLLAMA_HOST = "http://127.0.0.1:11434"
 DEFAULT_MODEL = "qwen2.5:14b"  # trendyol-7b yerine
 
 # Model Ã§Ã¶kerse veya bulunamazsa devreye girer
-DEFAULT_FALLBACK = "qwen2.5:14b"  # trendyol-7b yerine
+DEFAULT_FALLBACK = "qwen2.5:7b"  
 
 # ArayÃ¼z dropdown'Ä±nda gÃ¶sterilecek modeller (sÄ±ralÄ±)
 PRIMARY_MODELS = [
@@ -40,7 +40,7 @@ FALLBACK_MODELS = [
 # --- Model BaÅŸÄ±na Context (num_ctx) ---
 # Daha bÃ¼yÃ¼k context = daha fazla KV cache = daha yavaÅŸ
 MODEL_CONTEXT_MAP = {
-    "qwen2.5:14b": 12288,  # v10 FINAL
+    "qwen2.5:14b": 6144,   # v13 - JSON icin optimize
     "qwen2.5:7b": 8192,
     "qwen2.5:3b": 4096,        # 3B için 4096 yeterli
     "llama3.1:latest": 8192,

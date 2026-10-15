@@ -93,3 +93,12 @@ KAPSUL_URET*.ps1
 cebe_*.txt
 Modeller/*.gguf
 Modeller/Modelfile*
+
+# Yerel arac/diagnostik betikleri - git'e GIRMESIN
+Araçlar/
+
+
+# AI sohbet manifestleri - yerel
+deep_ai_sohbet/
+AUDIT_RAPORLARI/
+Araçlar/

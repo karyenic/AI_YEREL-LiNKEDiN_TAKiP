@@ -118,7 +118,7 @@ def _riskli_adaylar(adaylar, limit=10):
 
         # Son 5 olay
         olaylar = []
-        for o in gecmis[-5:]:
+        for o in gecmis[:5]:
             metin = (o.get("olay_metni") or "").strip()
             if len(metin) > 400:
                 metin = metin[:400] + "..."
@@ -173,7 +173,7 @@ def ozet():
         "kaba_listede": "Kaba listede, sadece kayitli",
         "davet_edildi": "Davet edildi, cevap bekleniyor",
         "randevu_var": "Randevu verildi",
-        "plan_yapildi": "PLAN ANLATILDI - EN KRITIK ASAMA",
+        "plan_yapildi": "PLAN ANLATILDI - TAKIP ASAMASI (plan gonderildi, geri bildirim bekleniyor)",
     }
 
     riskli_bloklar = []
@@ -182,7 +182,7 @@ def ozet():
         # Iptal tespiti: son olayda iptal/duzeltme kelimesi var mi?
         _IPTAL_KEL = ("iptal", "gorusulmedi", "hatali kayit", "yanlis kayit",
                        "duzeltme", "gecersiz", "olmadi", "yapilmadi")
-        _son_metin = (r["olaylar"][-1]["metin"].lower()
+        _son_metin = (r["olaylar"][0]["metin"].lower()
                        if r.get("olaylar") else "")
         _iptal_var = any(k in _son_metin for k in _IPTAL_KEL)
         if r['gercek_temas_var']:
@@ -268,7 +268,7 @@ Her aday icin:
 - **Aksiyon**: Bugun/yarin tam olarak ne yapilmali
 - **Mesaj metni onerisi**:
   * HIC TEMAS YOKSA → "tanisma mesaji" tonu:
-    "Merhaba X Hanim/Bey, sizi [sebep] dolayisiyla ekibimize dahil etmek istiyoruz. Musait oldugunuzda kisa bir gorusme ayarlayabilir miyiz?"
+    "Merhaba X Hanim/Bey, sizi [sebep] dolayisiyla ekibimize dahil etmek istiyoruz. Müsait oldugunuzda kisa bir gorusme planlayabilir miyiz?"
   * GECMIS TEMAS VARSA → samimi takip tonu.
 
 **3. Haftalik Optimal Calisma Plani**
@@ -285,7 +285,7 @@ Huni verisinde anomali veya firsat var mi?
 5. Somut ol. "Iletisime gec" yerine NE SOYLEYECEGINI yaz.
 6. LaTeX/Markdown matematik YASAK.
 7. Toplam 25-35 satir.
-8. YAZIM KONTROLU: yarinrandaki yerine yarinki, firsa yerine firsat, musait yerine musait, gorusmeme yerine gorusmeye. Nokta-virgul karistirma."""
+8. YAZIM KONTROLU: yarinrandaki yerine yarinki, firsa yerine firsat, musait yerine müsait, gorusmeme yerine gorusmeye. Nokta-virgul karistirma."""
 
     try:
         metin = ""
