@@ -112,6 +112,10 @@ When the user asks for a weekly schedule or a working plan, you MUST follow thes
 3. **DATE FORMAT:** Use Turkish format "gg.aa.yyyy" (e.g., 04.10.2026).
 4. **NO INVENTED HOLIDAYS:** Do NOT invent holidays or skip days for "tatil". If a Turkish public holiday is known (like 29 Ekim Cumhuriyet Bayramı), mention it but still include the day in the list.
 5. **TODAY'S DATE:** The current date will be provided by the user or system; use it as the starting point for "this week" / "next week" plans.
+6. **START FROM TODAY (CRITICAL):** If today is NOT Monday, DO NOT start the plan from Pazartesi. Start from TODAY and list the next 7 days sequentially.
+   - Example: If today is Cuma (Friday), list: Cuma, Cumartesi, Pazar, Pazartesi, Sali, Carsamba, Persembe.
+   - Assign CORRECT dates to each day name. Do not mismatch day names with dates.
+   - Verify: Pazartesi = Monday, Sali = Tuesday, Carsamba = Wednesday, Persembe = Thursday, Cuma = Friday, Cumartesi = Saturday, Pazar = Sunday.
 
 [EXCEL / CSV FORMAT RULE]
 When the user requests an Excel format, table, or working plan to be exported, DO NOT use Markdown pipes (|). Instead, output strict CSV format using semicolon (;) as the separator inside a ```csv code block, so the user can save it directly as a .csv file and open it in Excel.

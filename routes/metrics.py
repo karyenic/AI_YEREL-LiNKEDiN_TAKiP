@@ -379,6 +379,17 @@ def ozet():
 
     bugun_str = datetime.now().strftime("%d.%m.%Y (%A)")
 
+    # Haftalik gun tablosu (bugunden baslayarak 7 gun) - Python hesaplar, LLM uydurmaz
+    _TR_GUNLER = ["Pazartesi", "Sali", "Carsamba", "Persembe", "Cuma", "Cumartesi", "Pazar"]
+    _bugun_ts = pd.Timestamp.now()
+    _gun_satirlar = []
+    for _i in range(7):
+        _d = _bugun_ts + pd.Timedelta(days=_i)
+        _gun_adi = _TR_GUNLER[_d.weekday()]
+        _etiket = " (BUGUN)" if _i == 0 else ""
+        _gun_satirlar.append(f"  Gun {_i+1}: {_d.strftime('%d.%m.%Y')} {_gun_adi}{_etiket}")
+    gun_tablosu = "\n".join(_gun_satirlar)
+
     prompt = f"""# ROL
 Sen deneyimli bir network marketing is gelistirme kocusun. Adaylarla yapilan gorusmelerin notlarini okuyup STRATEJIK oneriler veriyorsun.
 
@@ -436,6 +447,7 @@ Hangi adimda darbogaz var (en dusuk donusum), tek-iki cumle, rakamlarla.
 
 **2. Aday Bazli Stratejik Oneri** (EN AZ 5 ADAY - ZORUNLU)
 ONCE FIRSAT adaylarindan basla (olumlu sinyal verenler), sonra riskli adaylara gec.
+NOT: Bu bolumde HAFTALIK PLAN YAZMA. Sadece aday-aksiyon listesi ver.
 Her aday icin:
 - **Durum**: 1 cumle (gercek temas var mi, yok mu — buna gore cumle kur)
 - **Yorum**: Adayin notundan cikarim (meslegi, motivasyonu, ilgisi)
@@ -446,10 +458,15 @@ Her aday icin:
   * GECMIS TEMAS VARSA → samimi takip tonu.
 
 **3. Haftalik Optimal Calisma Plani**
-7 gun (Pazartesi-Pazar). Her gun somut aday isimleri + eylem. Oncelikliler hafta basina.
-Her gune TARIH ekle (gg.aa.yyyy formatinda, bugunden baslayarak).
-Son notu OLUMSUZ olan adaylari ("ilgilenmedi", "olumsuz", "reddetti") plana EKLEME.
-Once FIRSAT adaylarindan basla, sonra riskli adaylara gec.
+ONEMLI: Bu bolumu SADECE BIR KEZ yaz. Onceki bolumlerde (1 ve 2) haftalik plan YAZMA.
+Asagidaki GUN TABLOSUNU AYNEN kullan (7 gun zorunlu, atlama):
+{gun_tablosu}
+
+KURALLAR:
+- Her gunu tablodaki TARIH ve GUN ADI ile yaz (kopyala, UYDURMA).
+- Tablodaki sirayi takip et (Gun 1, Gun 2, ... Gun 7).
+- Son notu OLUMSUZ olan adaylari ("ilgilenmedi", "olumsuz", "reddetti") plana EKLEME.
+- Once FIRSAT adaylarindan basla, sonra riskli adaylara gec.
 
 **4. Gozden Kacan Firsatlar**
 Huni verisinde anomali veya firsat var mi?
