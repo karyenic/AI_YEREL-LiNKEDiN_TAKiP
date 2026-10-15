@@ -179,7 +179,7 @@ def stream():
                     if _mail: _parcalar.append(f"Mail:{_mail}")
                     _ek = (" " + " ".join(_parcalar)) if _parcalar else ""
                     satirlar.append(f"{i}. {isim} [{durum}]{_ek}")
-                    for olay in kart["gecmis"][-ADAY_OLAY_LIMIT:]:
+                    for olay in kart["gecmis"][:ADAY_OLAY_LIMIT]:
                         tarih = olay.get("tarih", "")
                         tip = olay.get("olay_tipi", "")
                         metin = olay.get("olay_metni", "")
