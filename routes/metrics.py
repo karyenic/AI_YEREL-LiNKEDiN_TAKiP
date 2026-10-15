@@ -146,6 +146,150 @@ def _riskli_adaylar(adaylar, limit=10):
     sonuc.sort(key=lambda x: (ASAMA_ONCELIK.get(x["asama"], 99), x["_sort"]))
     return sonuc[:limit]
 
+def _firsat_adaylar(adaylar, limit=10):
+    """Son 7 gundeki olumlu sinyalleri tarar, firsat adaylarini dondurur."""
+    from core.database import aday_karti_getir
+
+    def _norm(s):
+        if not s:
+            return ""
+        tr = str.maketrans(
+            "\u00e7\u011f\u0131\u00f6\u015f\u00fc\u00c7\u011e\u0130\u00d6\u015e\u00dc",
+            "cgiosuCGIOSU"
+        )
+        return s.translate(tr).lower()
+
+    # (kod, agirlik, etiket, anahtar_kelimeler)
+    SINYALLER = [
+        ("baglanti_istegi", 10, "Kendi baglanti istegi gonderdi",
+         ["baglanti istegi gonderdi", "baglanti istegi gonderd",
+          "istek gonderdi", "baglanti istegini kabul"]),
+        ("telefon_verdi",   12, "Telefon numarasi verdi",
+         ["telefon numarasini", "telefon numarasi",
+          "telefonunu ver", "telefon paylast"]),
+        ("bilgi_istedi",     7, "Bilgi/detay istedi",
+         ["bilgi istedi", "detay istedi", "detaylari ned",
+          "daha fazla bilgi", "bilgi almak istiyor"]),
+        ("davet_kabul",      6, "LinkedIn davetini kabul etti",
+         ["davetimi kabul", "daveti kabul",
+          "baglanti istegimi kabul", "baglanti davetimi kabul"]),
+        ("is_birligi_ilgi",  7, "Is birligine ilgi gosterdi",
+         ["is birligi firsat", "is birligi",
+          "degerlendir", "ilgi duyuyor"]),
+        ("olumlu_yanit",     5, "Olumlu yanit / tesekkur",
+         ["tesekkur ederim", "memnuniyet",
+          "memnun oldum", "nazik mesaj"]),
+        ("mesaj_gonderdi",   4, "Iki yonlu mesaj",
+         ["mesaj gonderdi", "yanit gonderdi", "mesaj gonder"]),
+    ]
+
+    aktif = [
+        a for a in adaylar
+        if not int(a.get('kayit') or 0) and not int(a.get('hayir') or 0)
+    ]
+
+    bugun = pd.Timestamp.now().normalize()
+    PENCERE = 7
+
+    sonuc = []
+
+    for a in aktif:
+        kart = aday_karti_getir(a.get("id"))
+        if not kart:
+            continue
+        gecmis = kart.get("gecmis", []) or []
+        if not gecmis:
+            continue
+
+        bulunan_sinyaller = []
+        toplam_agirlik = 0
+
+        for o in gecmis:
+            t = tarih_parse(o.get("tarih"))
+            if pd.isna(t):
+                continue
+            gun_fark = int((bugun - t.normalize()).days)
+            if gun_fark > PENCERE or gun_fark < 0:
+                continue
+
+            metin = (o.get("olay_metni") or "")
+            metin_norm = _norm(metin)
+
+            for kod, agirlik, etiket, kelimeler in SINYALLER:
+                if any(s["kod"] == kod for s in bulunan_sinyaller):
+                    continue
+                for k in kelimeler:
+                    if k in metin_norm:
+                        bulunan_sinyaller.append({
+                            "kod": kod,
+                            "etiket": etiket,
+                            "agirlik": agirlik,
+                            "tarih": o.get("tarih", ""),
+                            "metin": metin[:150],
+                        })
+                        toplam_agirlik += agirlik
+                        break
+
+        # Olumsuz sinyal kontrolu - son 7 gunde olumsuz kelime varsa firsat degil
+        OLUMSUZ_KELIMELER = ("ilgilenmedi", "olumsuz", "reddetti",
+                              "istemiyor", "hayir dedi", "uyumsuz",
+                              "net hayir", "kesinlikle hayir", "asla",
+                              "yanit vermedi", "donmedi")
+        olumsuz_var = False
+        for o in gecmis:
+            t = tarih_parse(o.get("tarih"))
+            if pd.isna(t):
+                continue
+            if int((bugun - t.normalize()).days) > PENCERE:
+                continue
+            m = _norm(o.get("olay_metni") or "")
+            if any(k in m for k in OLUMSUZ_KELIMELER):
+                olumsuz_var = True
+                break
+
+        if olumsuz_var:
+            continue
+
+        if not bulunan_sinyaller:
+            continue
+
+        tarihler = [tarih_parse(s["tarih"]) for s in bulunan_sinyaller]
+        tarihler = [t for t in tarihler if not pd.isna(t)]
+        if tarihler:
+            son_temas_str = max(tarihler).strftime("%d.%m.%Y")
+            gun_temassiz = int((bugun - max(tarihler).normalize()).days)
+        else:
+            son_temas_str = "-"
+            gun_temassiz = 999
+
+        olaylar = []
+        for o in gecmis[:5]:
+            metin = (o.get("olay_metni") or "").strip()
+            if len(metin) > 400:
+                metin = metin[:400] + "..."
+            olaylar.append({
+                "tarih": o.get("tarih", ""),
+                "tip": o.get("olay_tipi", ""),
+                "metin": metin,
+            })
+
+        sonuc.append({
+            "isim": a.get("isim", "?"),
+            "durum": kart.get("durum", "?"),
+            "telefon": (kart.get("telefon") or "").strip(),
+            "email": (kart.get("email") or "").strip(),
+            "sinyaller": bulunan_sinyaller,
+            "sinyal_gucu": toplam_agirlik,
+            "son_temas": son_temas_str,
+            "gun_temassiz": gun_temassiz,
+            "olaylar": olaylar,
+            "_sort": -toplam_agirlik,
+        })
+
+    sonuc.sort(key=lambda x: (x["_sort"], x["gun_temassiz"]))
+    return sonuc[:limit]
+
+
 @bp.route("", methods=["GET"])
 def hesapla():
     adaylar = adaylari_getir()
@@ -166,6 +310,7 @@ def ozet():
 
     h = _huni_hesapla(adaylar)
     riskli = _riskli_adaylar(adaylar, limit=10)
+    firsat = _firsat_adaylar(adaylar, limit=10)
 
     # Riskli adaylari DETAYLI formatta hazirla
     asama_etiket = {
@@ -182,9 +327,13 @@ def ozet():
         # Iptal tespiti: son olayda iptal/duzeltme kelimesi var mi?
         _IPTAL_KEL = ("iptal", "gorusulmedi", "hatali kayit", "yanlis kayit",
                        "duzeltme", "gecersiz", "olmadi", "yapilmadi")
+        _OLUMSUZ_KEL = ("ilgilenmedi", "olumsuz", "reddetti", "istemiyor",
+                         "hayir dedi", "uyumsuz", "net hayir",
+                         "kesinlikle hayir")
         _son_metin = (r["olaylar"][0]["metin"].lower()
                        if r.get("olaylar") else "")
         _iptal_var = any(k in _son_metin for k in _IPTAL_KEL)
+        _olumsuz_var = any(k in _son_metin for k in _OLUMSUZ_KEL)
         if r['gercek_temas_var']:
             baslik = f"### {r['isim']}  |  Durum: {r['durum']}  |  {r['gun_temassiz']} gundur gercek temas yok"
             baslik += f"\n  Asama: {asama_str}"
@@ -192,6 +341,8 @@ def ozet():
             if _iptal_var:
                 baslik += "\n  !!! SON NOT IPTAL/DUZELTME ICERIYOR - ONCEKI KAYITLAR GECERSIZ !!!"
                 baslik += "\n  !!! Bu adayla GORUSULMEMIS olabilir, notlari dikkatli oku. !!!"
+            if _olumsuz_var:
+                baslik += "\n  !!! SON NOT OLUMSUZ - ILGI KAYBI - HAFTALIK PLANA EKLEME !!!"
         else:
             baslik = f"### {r['isim']}  |  Durum: {r['durum']}  |  HIC TEMAS EDILMEDI"
             baslik += f"\n  Sisteme kayit: {r['sisteme_kayit']} ({r['gun_temassiz']} gun once)"
@@ -207,6 +358,24 @@ def ozet():
         riskli_bloklar.append(baslik)
 
     riskli_metin = "\n\n".join(riskli_bloklar) if riskli_bloklar else "(temassizlik verisi yok)"
+
+    # Firsat adaylarini DETAYLI formatta hazirla
+    firsat_bloklar = []
+    for f_item in firsat:
+        baslik = f"### {f_item['isim']}  |  FIRSAT ADAYI  |  Sinyal Gucu: {f_item['sinyal_gucu']}"
+        baslik += "\n  Durum: OLUMLU SINYAL veren aday (son 7 gunde)"
+        baslik += f"\n  Son temas: {f_item['son_temas']} ({f_item['gun_temassiz']} gun once)"
+        if f_item['telefon'] or f_item['email']:
+            ilet = []
+            if f_item['telefon']: ilet.append(f"Tel:{f_item['telefon']}")
+            if f_item['email']: ilet.append(f"Mail:{f_item['email']}")
+            baslik += "\n  Iletisim: " + " | ".join(ilet)
+        baslik += "\n  Sinyaller:"
+        for sg in f_item['sinyaller']:
+            baslik += f"\n    - [{sg['etiket']}] {sg['tarih']}"
+        firsat_bloklar.append(baslik)
+
+    firsat_metin = "\n\n".join(firsat_bloklar) if firsat_bloklar else "(firsat sinyali yok)"
 
     bugun_str = datetime.now().strftime("%d.%m.%Y (%A)")
 
@@ -252,7 +421,11 @@ Ucdan uca: %{h['oran_uctan_uca']}
 Red orani: %{h['oran_red']}
 Hala surecte: {h['aktif_takipte']}
 
-# ONCELIKLI ADAYLAR (notlari dahil)
+# FIRSAT ADAYLAR - YUKSEK ONCELIK (olumlu sinyaller)
+Asagidaki adaylar son 7 gunde OLUMLU sinyal verdi. Ilk sirada bunlari ele al.
+{firsat_metin}
+
+# RİSKLI ADAYLAR - TAKIP LAZIM (notlari dahil)
 {riskli_metin}
 
 # GOREV
@@ -262,6 +435,7 @@ Asagidaki 4 basligi TURKCE uret:
 Hangi adimda darbogaz var (en dusuk donusum), tek-iki cumle, rakamlarla.
 
 **2. Aday Bazli Stratejik Oneri** (EN AZ 5 ADAY - ZORUNLU)
+ONCE FIRSAT adaylarindan basla (olumlu sinyal verenler), sonra riskli adaylara gec.
 Her aday icin:
 - **Durum**: 1 cumle (gercek temas var mi, yok mu — buna gore cumle kur)
 - **Yorum**: Adayin notundan cikarim (meslegi, motivasyonu, ilgisi)
@@ -273,9 +447,19 @@ Her aday icin:
 
 **3. Haftalik Optimal Calisma Plani**
 7 gun (Pazartesi-Pazar). Her gun somut aday isimleri + eylem. Oncelikliler hafta basina.
+Her gune TARIH ekle (gg.aa.yyyy formatinda, bugunden baslayarak).
+Son notu OLUMSUZ olan adaylari ("ilgilenmedi", "olumsuz", "reddetti") plana EKLEME.
+Once FIRSAT adaylarindan basla, sonra riskli adaylara gec.
 
 **4. Gozden Kacan Firsatlar**
 Huni verisinde anomali veya firsat var mi?
+
+YAZIM KURALLARI (ZORUNLU):
+- "fırsat" yaz (fırst degil)
+- "müsait" yaz (musait degil)
+- "teşekkür" yaz (tesekkur degil)
+- "görüşme" yaz (gorusme degil)
+- Tum cumlelerde Turkce karakterleri DOGRU kullan.
 
 # KURALLAR (IHALAL EDILEMEZ)
 1. SADECE TURKCE. Tek kelime bile Ingilizce/Cince YAZMA.
