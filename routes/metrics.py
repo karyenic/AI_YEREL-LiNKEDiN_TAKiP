@@ -273,11 +273,24 @@ def _firsat_adaylar(adaylar, limit=10):
                 "metin": metin,
             })
 
+        # Sicaklik seviyesi: en guclu sinyale gore
+        _SICAK_KODLAR = ("telefon_verdi", "bilgi_istedi", "is_birligi_ilgi",
+                          "olumlu_yanit", "mesaj_gonderdi")
+        _ILIK_KODLAR = ("baglanti_istegi", "davet_kabul")
+        _kodlar = [sg["kod"] for sg in bulunan_sinyaller]
+        if any(k in _kodlar for k in _SICAK_KODLAR):
+            sicaklik = "SICAK"
+        elif any(k in _kodlar for k in _ILIK_KODLAR):
+            sicaklik = "ILIK"
+        else:
+            sicaklik = "-"
+
         sonuc.append({
             "isim": a.get("isim", "?"),
             "durum": kart.get("durum", "?"),
             "telefon": (kart.get("telefon") or "").strip(),
             "email": (kart.get("email") or "").strip(),
+            "sicaklik": sicaklik,
             "sinyaller": bulunan_sinyaller,
             "sinyal_gucu": toplam_agirlik,
             "son_temas": son_temas_str,
@@ -311,6 +324,9 @@ def ozet():
     h = _huni_hesapla(adaylar)
     riskli = _riskli_adaylar(adaylar, limit=10)
     firsat = _firsat_adaylar(adaylar, limit=10)
+    # Cakisma onleme: firsat listesindeki adaylar riskli listesinden cikarilsin
+    _firsat_isimleri = {f["isim"].strip().lower() for f in firsat}
+    riskli = [r for r in riskli if r["isim"].strip().lower() not in _firsat_isimleri]
 
     # Riskli adaylari DETAYLI formatta hazirla
     asama_etiket = {
@@ -362,8 +378,9 @@ def ozet():
     # Firsat adaylarini DETAYLI formatta hazirla
     firsat_bloklar = []
     for f_item in firsat:
-        baslik = f"### {f_item['isim']}  |  FIRSAT ADAYI  |  Sinyal Gucu: {f_item['sinyal_gucu']}"
-        baslik += "\n  Durum: OLUMLU SINYAL veren aday (son 7 gunde)"
+        _sic = f_item.get('sicaklik', '-')
+        baslik = f"### {f_item['isim']}  |  FIRSAT ADAYI  |  Sicaklik: {_sic}  |  Sinyal Gucu: {f_item['sinyal_gucu']}"
+        baslik += "\n  Durum: TEMAS YAPILDI - OLUMLU SINYAL (son 7 gunde)"
         baslik += f"\n  Son temas: {f_item['son_temas']} ({f_item['gun_temassiz']} gun once)"
         if f_item['telefon'] or f_item['email']:
             ilet = []
@@ -434,6 +451,9 @@ Hala surecte: {h['aktif_takipte']}
 
 # FIRSAT ADAYLAR - YUKSEK ONCELIK (olumlu sinyaller)
 Asagidaki adaylar son 7 gunde OLUMLU sinyal verdi. Ilk sirada bunlari ele al.
+ONEMLI: Bu adaylar icin "Gercek temas yok" YAZMA. LinkedIn davet kabul, bilgi isteme,
+telefon verme = TEMAS SAYILIR. Sicaklik ILIK ise "Sicak statusune yaklastir",
+SICAK ise "Sicak statusune al" onerisi ver.
 {firsat_metin}
 
 # RİSKLI ADAYLAR - TAKIP LAZIM (notlari dahil)
@@ -465,11 +485,22 @@ Asagidaki GUN TABLOSUNU AYNEN kullan (7 gun zorunlu, atlama):
 KURALLAR:
 - Her gunu tablodaki TARIH ve GUN ADI ile yaz (kopyala, UYDURMA).
 - Tablodaki sirayi takip et (Gun 1, Gun 2, ... Gun 7).
+- HER GUNUN ALTINA aday adi + somut aksiyon yaz. Sadece tablo yetmez, aksiyon ZORUNLU.
+- 7 GUNUN HEPSI DOLU OLMALI. Bos gun BIRAKMA.
+- Aday yetmezse: bir adayi farkli gunde tekrar kullan veya "Takip: genel kontrol" yaz.
+  Ornek format:
+    ### Gun 1: 16.10.2026 Cuma (BUGUN)
+    - Ilke Damdere: Randevu belirle, plan sunumunu yap
+    ### Gun 2: 17.10.2026 Cumartesi
+    - Berat Cinar: Plan sunumu icin randevu belirle
+    (Bu sekilde 7 gune kadar devam et, HER GUN DOLU)
 - Son notu OLUMSUZ olan adaylari ("ilgilenmedi", "olumsuz", "reddetti") plana EKLEME.
 - Once FIRSAT adaylarindan basla, sonra riskli adaylara gec.
 
 **4. Gozden Kacan Firsatlar**
 Huni verisinde anomali veya firsat var mi?
+ONEMLI: Yukarida (bolum 2 ve 3) zaten yazdigin adaylari TEKRARLAMA.
+Sadece yukarida DEGINILMEYEN firsatlari listele. Yeni firsat yoksa "Yeni firsat yok" yaz.
 
 YAZIM KURALLARI (ZORUNLU):
 - "fırsat" yaz (fırst degil)
