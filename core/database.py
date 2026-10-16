@@ -560,8 +560,33 @@ def aday_sil(aday_id):
 
 
 def tum_adaylari_sil():
+    """v14: TUM aday verilerini siler + ID'leri sifirlar.
+
+    Silinen tablolar (bagimlidan koke dogru):
+      - aday_olaylari
+      - aday_profil
+      - adaylar
+
+    Ayrica sqlite_sequence sifirlanir, boylece yeni eklenen adaylar
+    id=1'den baslar (UI sira no ile DB id uyumu icin).
+    """
     with _conn(ADAY_DB) as c:
+        c.execute("DELETE FROM aday_olaylari")
+        c.execute("DELETE FROM aday_profil")
         c.execute("DELETE FROM adaylar")
+
+        # sqlite_sequence AUTOINCREMENT kullanan tablolar icin var.
+        # Bos DB'de henuz olusmamis olabilir -> once kontrol et.
+        seq_var = c.execute(
+            "SELECT name FROM sqlite_master "
+            "WHERE type='table' AND name='sqlite_sequence'"
+        ).fetchone()
+        if seq_var:
+            c.execute(
+                "DELETE FROM sqlite_sequence "
+                "WHERE name IN ('adaylar', 'aday_profil', 'aday_olaylari')"
+            )
+
         c.commit()
 
 
