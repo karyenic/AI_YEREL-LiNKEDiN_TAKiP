@@ -487,7 +487,7 @@ Randevu: {h['randevu']}  (davetten randevuya: %{h['oran_davetten_randevuya']})
 Plan sunumu: {h['plan']}  (randevudan plana: %{h['oran_randevudan_plana']})
 Kayit: {h['kayit']}  (plandan kayda: %{h['oran_plandan_kayda']})
 Ucdan uca: %{h['oran_uctan_uca']}
-Red orani: %{h['oran_red']}
+Red orani: %{h['oran_red']}  (yumusak red: {h['hayir']}, net/blok: {h['bloklu']})
 Hala surecte: {h['aktif_takipte']}
 
 # FIRSAT ADAYLAR - YUKSEK ONCELIK (olumlu sinyaller)
@@ -506,7 +506,9 @@ Asagidaki 4 basligi TURKCE uret:
 **1. Huni Durumu**
 Hangi adimda darbogaz var (en dusuk donusum), tek-iki cumle, rakamlarla.
 
-**2. Aday Bazli Stratejik Oneri** (EN AZ 5 ADAY - ZORUNLU)
+**2. Aday Bazli Stratejik Oneri** (ELINDEKI ADAYLARIN TAMAMI - en az 5 DEGIL)
+NOT: Elinde kac aday varsa o kadar yaz. Uydurma YASAK. Firsat + riskli havuzundan
+toplam kac aday varsa (5'ten az olsa bile) hepsini ele al.
 ONCE FIRSAT adaylarindan basla (olumlu sinyal verenler), sonra riskli adaylara gec.
 NOT: Bu bolumde HAFTALIK PLAN YAZMA. Sadece aday-aksiyon listesi ver.
 Her aday icin:
