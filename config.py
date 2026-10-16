@@ -40,8 +40,8 @@ FALLBACK_MODELS = [
 # --- Model BaÅŸÄ±na Context (num_ctx) ---
 # Daha bÃ¼yÃ¼k context = daha fazla KV cache = daha yavaÅŸ
 MODEL_CONTEXT_MAP = {
-    "qwen2.5:14b": 8192,   # v13 - JSON icin optimize
-    "qwen2.5:7b": 8192,
+    "qwen2.5:14b": 12288,   # v13 - JSON icin optimize
+    "qwen2.5:7b": 12288,
     "qwen2.5:3b": 4096,        # 3B için 4096 yeterli
     "llama3.1:latest": 8192,
     "trendyol-7b": 12288,
@@ -58,7 +58,7 @@ MODEL_TEMP_MAP = {
 }
 
 # --- Genel Sabitler ---
-DEFAULT_NUM_CTX = 8192
+DEFAULT_NUM_CTX = 12288
 NUM_CTX = DEFAULT_NUM_CTX
 
 # Modelin VRAM'de kalma sÃ¼resi (24h = sÃ¼rekli hazÄ±r, reload yok)
