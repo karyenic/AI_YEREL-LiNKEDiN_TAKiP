@@ -11,7 +11,15 @@ bp = Blueprint("metrics", __name__, url_prefix="/api/metrics")
 def _huni_hesapla(adaylar):
     """Kaba listeden kayda kadar GERÇEK huni (bir onceki adima gore %).
     Bu rakamlar LLM'e DOGRU VERI olarak verilir - LLM kendi hesaplamaz,
-    hesaplanmis rakami yorumlar (halusinasyonu engeller)."""
+    hesaplanmis rakami yorumlar (halusinasyonu engeller).
+
+    v14: Bloklu adaylar huniden HARIC tutulur (net hayir).
+    Cagiran taraf adaylari_getir(bloklular_dahil=True) kullanmali.
+    """
+    # v14: Bloklu adaylari ayir
+    bloklu_sayisi = sum(1 for a in adaylar if int(a.get('blok') or 0))
+    adaylar = [a for a in adaylar if not int(a.get('blok') or 0)]
+
     toplam = len(adaylar)
 
     def s(k):
@@ -52,6 +60,7 @@ def _huni_hesapla(adaylar):
         "kayit": kayit, "takip": takip, "hayir": hayir,
         "is_ariyor": is_ariyor,
         "aktif_takipte": aktif_takipte,
+        "bloklu": bloklu_sayisi,
         # Zincirdeki her adimin BIR ONCEKI adima gore donusum orani
         "oran_kabadan_davete": oran(davet, toplam),
         "oran_davetten_randevuya": oran(randevu, davet),
@@ -59,7 +68,8 @@ def _huni_hesapla(adaylar):
         "oran_plandan_kayda": oran(kayit, plan),
         # Ucdan uca: kaba listeden kayda genel basari orani
         "oran_uctan_uca": oran(kayit, toplam),
-        "oran_red": oran(hayir, toplam),
+        # v14: Red orani = yumusak hayir + net (blok) / genel toplam
+        "oran_red": oran(hayir + bloklu_sayisi, toplam + bloklu_sayisi),
         # Eskiye uyumluluk
         "davet_randevu_oran": oran(randevu, davet),
         "plan_kayit_oran": oran(kayit, plan),
@@ -334,7 +344,8 @@ def _firsat_adaylar(adaylar, limit=10):
 
 @bp.route("", methods=["GET"])
 def hesapla():
-    adaylar = adaylari_getir()
+    # v14: bloklular dahil cagir, _huni_hesapla kendi filtreler
+    adaylar = adaylari_getir(bloklular_dahil=True)
     if not adaylar:
         return jsonify({"toplam": 0})
     return jsonify(_huni_hesapla(adaylar))
@@ -350,7 +361,8 @@ def ozet():
     if not adaylar:
         return jsonify({"ozet": "Veritabanı boş, henüz bir strateji çıkarılamaz."})
 
-    h = _huni_hesapla(adaylar)
+    # v14: Huni bloklu adaylari da gorsun (kendi icinde filtreler)
+    h = _huni_hesapla(adaylari_getir(bloklular_dahil=True))
     riskli = _riskli_adaylar(adaylar, limit=10)
     firsat = _firsat_adaylar(adaylar, limit=10)
     # Cakisma onleme: firsat listesindeki adaylar riskli listesinden cikarilsin
