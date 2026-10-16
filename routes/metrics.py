@@ -17,9 +17,25 @@ def _huni_hesapla(adaylar):
     def s(k):
         return sum(int(a.get(k) or 0) for a in adaylar)
 
-    davet, randevu, plan = s('davet'), s('randevu'), s('plan')
-    kayit, takip, hayir = s('kayit'), s('takip'), s('hayir')
+    def s_kumulatif(*anahtarlar):
+        """Aday bu anahtarlardan EN AZ BIRINE sahipse 1 sayar.
+        Huni mantigi: bir sonraki adima gecen, onceki adimlari da gecmis sayilir.
+        Yapiskan flag sorununu cozer (1 davet + 3 randevu -> %300 bug'i).
+        """
+        return sum(
+            1 for a in adaylar
+            if any(int(a.get(k) or 0) for k in anahtarlar)
+        )
+
+    # Ham sayimlar (huni disi metrikler icin)
+    takip, hayir = s('takip'), s('hayir')
     is_ariyor = s('is_ariyor')
+
+    # Kumulatif huni sayimlari
+    davet   = s_kumulatif('davet', 'randevu', 'plan', 'kayit')
+    randevu = s_kumulatif('randevu', 'plan', 'kayit')
+    plan    = s_kumulatif('plan', 'kayit')
+    kayit   = s_kumulatif('kayit')
 
     def oran(pay, payda):
         return round(pay / payda * 100, 1) if payda else 0.0
