@@ -146,6 +146,7 @@ def init_all():
         _kolon_ekle(c, "adaylar", "blok", "INTEGER DEFAULT 0")
         _kolon_ekle(c, "adaylar", "blok_tarihi", "TEXT")
         _kolon_ekle(c, "adaylar", "blok_notu", "TEXT")
+        _kolon_ekle(c, "adaylar", "linkedin_url", "TEXT")
 
         c.execute('''
             CREATE INDEX IF NOT EXISTS idx_aday_profil_isim
@@ -196,7 +197,7 @@ def init_all():
                     (isim, telefon, email, adres, durum, aktif, created_at, updated_at)
                     VALUES (?, '', '', '', ?, 1, ?, ?)
                     ''',
-                    (isim.strip(), durum or "🆕 Yeni", now, now)
+                    (isim.strip(), "🆕 Yeni", now, now)
                 )
                 profil_id = cur.lastrowid
             else:

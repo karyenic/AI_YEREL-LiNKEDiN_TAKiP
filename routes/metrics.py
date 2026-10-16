@@ -50,6 +50,19 @@ def _huni_hesapla(adaylar):
     }
 
 
+def tr_norm(s):
+    """Turkce uyumlu lowercase. I/İ -> i, I -> i, diger Turkce -> ASCII.
+    translate + lower kombinasyonu; birlesik noktali i sorununu onler.
+    """
+    if not s:
+        return ""
+    tr = str.maketrans(
+        "çğıöşüÇĞİÖŞÜ",
+        "cgiosuCGIOSU"
+    )
+    return str(s).translate(tr).lower()
+
+
 def _riskli_adaylar(adaylar, limit=10):
     """Her aktif aday icin: gercek temas ayrimi + son 5 olay.
     Excel Geçmişi ve Aday Kaydı = VERI GIRISI, temas DEGIL."""
@@ -346,7 +359,7 @@ def ozet():
         _OLUMSUZ_KEL = ("ilgilenmedi", "olumsuz", "reddetti", "istemiyor",
                          "hayir dedi", "uyumsuz", "net hayir",
                          "kesinlikle hayir")
-        _son_metin = (r["olaylar"][0]["metin"].lower()
+        _son_metin = (tr_norm(r["olaylar"][0]["metin"])
                        if r.get("olaylar") else "")
         _iptal_var = any(k in _son_metin for k in _IPTAL_KEL)
         _olumsuz_var = any(k in _son_metin for k in _OLUMSUZ_KEL)
