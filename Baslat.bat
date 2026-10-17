@@ -7,69 +7,33 @@ echo ================================================
 echo   LinkedIn Takip Asistani (Flask)
 echo ================================================
 
+REM Ollama kontrolu (bilgi amacli)
 set OLLAMA_EXE=C:\AI_IPEX\Ollama\portable\ollama.exe
-set OLLAMA_KEEP_ALIVE=24h
-
 if not exist "%OLLAMA_EXE%" (
     echo [UYARI] IPEX Ollama bulunamadi: %OLLAMA_EXE%
-    echo         Standart Ollama ile devam edilecek, Intel Arc hizlandirmasi CALISMAYACAK.
-    set OLLAMA_EXE=ollama
+    echo         Ollama_Start.bat icindeki yolu kontrol edin.
 )
 
-REM ============================================================
-REM  IPEX-LLM RESMI DOKUMANINDAKI TUM GEREKLI AYARLAR
-REM  Kaynak: ipex-llm.readthedocs.io Ollama Quickstart
-REM ============================================================
-
-REM 1. EN ONEMLI: Tum katmanlari GPU'ya yukle (yoksa bazi katmanlar CPU'da kalir)
-set OLLAMA_NUM_GPU=999
-
-REM 2. IPEX'in hangi GPU'yu kullanacagi (0=iGPU, 1=dGPU/Arc)
-REM    Eger sistemde sadece 1 GPU varsa 0 yapin
-set ONEAPI_DEVICE_SELECTOR=level_zero:0
-
-REM 3. IPEX LLM icin zorunlu sistem ayarlari
-set ZES_ENABLE_SYSMAN=1
-set SYCL_CACHE_PERSISTENT=1
-set SYCL_PI_LEVEL_ZERO_USE_IMMEDIATE_COMMANDLISTS=1
-set IPEX_LLM_NUM_CTX=12288
-set OLLAMA_CONTEXT_LENGTH=12288
-
-REM 5. Proxy'yi devre disi birak (localhost baglantilari icin)
-set no_proxy=localhost,127.0.0.1
-set NO_PROXY=localhost,127.0.0.1
-
-REM 6. Ollama sunucu ayarlari
-set OLLAMA_HOST=127.0.0.1:11434
-set OLLAMA_NUM_PARALLEL=1
-set OLLAMA_KEEP_ALIVE=24h
-set OLLAMA_MAX_LOADED_MODELS=1
-set OLLAMA_FLASH_ATTENTION=false
-
-echo [0/4] IPEX ortam degiskenleri ayarlandi:
-echo        OLLAMA_NUM_GPU = %OLLAMA_NUM_GPU%  (tum katmanlar GPU'da)
-echo        ONEAPI_DEVICE_SELECTOR = %ONEAPI_DEVICE_SELECTOR%
-echo        Kullanilan Ollama: %OLLAMA_EXE%
-
+REM Eski Ollama sureclerini durdur
 taskkill /f /im ollama.exe >nul 2>&1
 taskkill /f /im ollama-lib.exe >nul 2>&1
 taskkill /f /im "ollama app.exe" >nul 2>&1
 timeout /t 2 /nobreak >nul
 
 echo [1/4] Ollama (IPEX) baslatiliyor...
-start "Ollama-IPEX" /min "C:\AI_YEREL\LiNKEDiN_TAKiP\Ollama_Start.bat"
+start "Ollama-IPEX" /min "%~dp0Ollama_Start.bat"
 
 echo [2/4] Ollama portu bekleniyor (max 45 sn)...
 set /a n=0
-:W
+:WAIT_OLLAMA
 timeout /t 1 /nobreak >nul
 powershell -NoProfile -Command "try { (New-Object Net.Sockets.TcpClient).Connect('127.0.0.1',11434); exit 0 } catch { exit 1 }" >nul 2>&1
-if %errorlevel%==0 goto OLLAMA_HAZIR
+if %errorlevel%==0 goto OLLAMA_READY
 set /a n+=1
-if %n% GEQ 45 goto HATA
-goto W
+if %n% GEQ 45 goto OLLAMA_FAIL
+goto WAIT_OLLAMA
 
-:OLLAMA_HAZIR
+:OLLAMA_READY
 echo        Ollama hazir.
 
 echo [3/4] Python venv aktif ediliyor...
@@ -90,7 +54,7 @@ python app.py
 pause
 goto :eof
 
-:HATA
+:OLLAMA_FAIL
 echo [HATA] Ollama 45 saniyede acilmadi.
-echo        Ollama'yi manuel kontrol edin: %OLLAMA_EXE% serve
+echo        Manuel kontrol: Ollama_Start.bat
 pause
