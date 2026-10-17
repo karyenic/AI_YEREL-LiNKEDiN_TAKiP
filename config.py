@@ -66,7 +66,8 @@ KEEP_ALIVE = "24h"
 
 # --- Aday OlaylarÄ± (context iÃ§in) ---
 ADAY_OLAY_LIMIT = 3
-ADAY_PROMPT_LIMIT = 50
+ADAY_PROMPT_LIMIT = 20
+CHAT_MODEL = "qwen2.5:7b"  # v15: chat icin hafif model (7B)
 
 
 # ═══════════════════════════════════════════════════════════════════════

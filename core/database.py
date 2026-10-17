@@ -147,6 +147,8 @@ def init_all():
         _kolon_ekle(c, "adaylar", "blok_tarihi", "TEXT")
         _kolon_ekle(c, "adaylar", "blok_notu", "TEXT")
         _kolon_ekle(c, "adaylar", "linkedin_url", "TEXT")
+        _kolon_ekle(c, "adaylar", "randevu_tarihi", "TEXT")
+        _kolon_ekle(c, "adaylar", "randevu_saati", "TEXT")
 
         c.execute('''
             CREATE INDEX IF NOT EXISTS idx_aday_profil_isim

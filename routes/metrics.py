@@ -187,6 +187,7 @@ def _riskli_adaylar(adaylar, limit=10):
 
 def _firsat_adaylar(adaylar, limit=10):
     """Son 7 gundeki olumlu sinyalleri tarar, firsat adaylarini dondurur."""
+    import re
     from core.database import aday_karti_getir
 
     def _norm(s):
@@ -198,14 +199,24 @@ def _firsat_adaylar(adaylar, limit=10):
         )
         return s.translate(tr).lower()
 
-    # (kod, agirlik, etiket, anahtar_kelimeler)
+    # v15: cumlecik bolucu + engel kelimeler (yanlis pozitifleri engeller)
+    _CUM_SPLIT_RE = re.compile(
+        r"[,;!?]|\.\s+|\b(?:ama|fakat|ancak|lakin|oysa|halbuki)\b", re.I
+    )
+    _ENGEL_KELIMELER = ("yok", "henuz", "vermedi", "bulamadim",
+                        "istedim", "gonderdim", "gonderilecek",
+                        "aranacak", "alindi", "etmedi", "kabul etmedi",
+                        "planliyor", "planlanacak")
+
+    def _cumleciklere_bol(s):
+        parts = _CUM_SPLIT_RE.split(s or "")
+        return [p.strip() for p in parts if p.strip()]
+
+    def _cumlecik_engelli(c):
+        return any(e in c for e in _ENGEL_KELIMELER)
+
+    # (kod, agirlik, etiket, anahtar_kelimeler) - kelime tabanli
     SINYALLER = [
-        ("baglanti_istegi", 10, "Kendi baglanti istegi gonderdi",
-         ["baglanti istegi gonderdi", "baglanti istegi gonderd",
-          "istek gonderdi", "baglanti istegini kabul"]),
-        ("telefon_verdi",   12, "Telefon numarasi verdi",
-         ["telefon numarasini", "telefon numarasi",
-          "telefonunu ver", "telefon paylast"]),
         ("bilgi_istedi",     7, "Bilgi/detay istedi",
          ["bilgi istedi", "detay istedi", "detaylari ned",
           "daha fazla bilgi", "bilgi almak istiyor"]),
@@ -213,13 +224,22 @@ def _firsat_adaylar(adaylar, limit=10):
          ["davetimi kabul", "daveti kabul",
           "baglanti istegimi kabul", "baglanti davetimi kabul"]),
         ("is_birligi_ilgi",  7, "Is birligine ilgi gosterdi",
-         ["is birligi firsat", "is birligi",
-          "degerlendir", "ilgi duyuyor"]),
+         ["is birligi firsat", "is birligine ilgi",
+          "is birligi ile ilgili", "ilgi duyuyor",
+          "ilgi gosterdi", "degerlendirecegini"]),
         ("olumlu_yanit",     5, "Olumlu yanit / tesekkur",
          ["tesekkur ederim", "memnuniyet",
           "memnun oldum", "nazik mesaj"]),
+    ]
+
+    # (kod, agirlik, etiket, regex) - kalip tabanli, kelime sinirli
+    SINYAL_PATTERNS = [
+        ("baglanti_istegi", 10, "Kendi baglanti istegi gonderdi",
+         re.compile(r"\bbaglanti isteg\w*.*\bgonderdi\b", re.I)),
+        ("telefon_verdi",   12, "Telefon numarasi verdi",
+         re.compile(r"\b(telefon|numara)\w*.*\b(verdi|paylasti|iletti)\b", re.I)),
         ("mesaj_gonderdi",   4, "Iki yonlu mesaj",
-         ["mesaj gonderdi", "yanit gonderdi", "mesaj gonder"]),
+         re.compile(r"\b(mesaj|yanit)\w*.*\bgonderdi\b", re.I)),
     ]
 
     aktif = [
@@ -254,26 +274,47 @@ def _firsat_adaylar(adaylar, limit=10):
             metin = (o.get("olay_metni") or "")
             metin_norm = _norm(metin)
 
+            cumlecikler = [
+                c for c in _cumleciklere_bol(metin_norm)
+                if not _cumlecik_engelli(c)
+            ]
+            if not cumlecikler:
+                continue
+
+            def _sinyal_ekle(kod, etiket, agirlik):
+                bulunan_sinyaller.append({
+                    "kod": kod,
+                    "etiket": etiket,
+                    "agirlik": agirlik,
+                    "tarih": o.get("tarih", ""),
+                    "metin": metin[:150],
+                })
+
             for kod, agirlik, etiket, kelimeler in SINYALLER:
                 if any(s["kod"] == kod for s in bulunan_sinyaller):
                     continue
-                for k in kelimeler:
-                    if k in metin_norm:
-                        bulunan_sinyaller.append({
-                            "kod": kod,
-                            "etiket": etiket,
-                            "agirlik": agirlik,
-                            "tarih": o.get("tarih", ""),
-                            "metin": metin[:150],
-                        })
+                for c in cumlecikler:
+                    if any(k in c for k in kelimeler):
+                        _sinyal_ekle(kod, etiket, agirlik)
+                        toplam_agirlik += agirlik
+                        break
+
+            for kod, agirlik, etiket, pat in SINYAL_PATTERNS:
+                if any(s["kod"] == kod for s in bulunan_sinyaller):
+                    continue
+                for c in cumlecikler:
+                    if pat.search(c):
+                        _sinyal_ekle(kod, etiket, agirlik)
                         toplam_agirlik += agirlik
                         break
 
         # Olumsuz sinyal kontrolu - son 7 gunde olumsuz kelime varsa firsat degil
         OLUMSUZ_KELIMELER = ("ilgilenmedi", "olumsuz", "reddetti",
                               "istemiyor", "hayir dedi", "uyumsuz",
-                              "net hayir", "kesinlikle hayir", "asla",
+                              "net hayir", "kesinlikle hayir",
                               "yanit vermedi", "donmedi")
+        # "asla" icin kelime siniri - "Aslan" adli aday yakalanmasin
+        _ASLA_RE = re.compile(r"\basla\b", re.I)
         olumsuz_var = False
         for o in gecmis:
             t = tarih_parse(o.get("tarih"))
@@ -282,7 +323,7 @@ def _firsat_adaylar(adaylar, limit=10):
             if int((bugun - t.normalize()).days) > PENCERE:
                 continue
             m = _norm(o.get("olay_metni") or "")
-            if any(k in m for k in OLUMSUZ_KELIMELER):
+            if any(k in m for k in OLUMSUZ_KELIMELER) or _ASLA_RE.search(m):
                 olumsuz_var = True
                 break
 
@@ -532,11 +573,12 @@ KURALLAR:
 - 7 GUNUN HEPSI DOLU OLMALI. Bos gun BIRAKMA.
 - Aday yetmezse: bir adayi farkli gunde tekrar kullan veya "Takip: genel kontrol" yaz.
   Ornek format:
-    ### Gun 1: 16.10.2026 Cuma (BUGUN)
-    - Ilke Damdere: Randevu belirle, plan sunumunu yap
-    ### Gun 2: 17.10.2026 Cumartesi
-    - Berat Cinar: Plan sunumu icin randevu belirle
+    ### Gun 1: <TARIH> <GUN_ADI> (BUGUN)
+    - <Aday Adi>: <Somut aksiyon>
+    ### Gun 2: <TARIH> <GUN_ADI>
+    - <Aday Adi>: <Somut aksiyon>
     (Bu sekilde 7 gune kadar devam et, HER GUN DOLU)
+    NOT: Tarihleri YUKARIDAKI HAFTALIK TABLODAN al, kendin uydurma.
 - Son notu OLUMSUZ olan adaylari ("ilgilenmedi", "olumsuz", "reddetti") plana EKLEME.
 - Once FIRSAT adaylarindan basla, sonra riskli adaylara gec.
 

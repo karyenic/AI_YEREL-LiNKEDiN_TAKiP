@@ -6,7 +6,8 @@ from core.database import (chat_mesajlari_getir, chat_mesaj_ekle, chat_temizle,
                           adaylari_getir, aday_karti_getir)
 from core.ollama_client import chat_stream, sistem_mesaji_olustur
 from config import (ADAY_OLAY_LIMIT, ADAY_PROMPT_LIMIT, DEFAULT_MODEL,
-                    DEFAULT_FALLBACK, PRIMARY_MODELS, ADAY_DB, ADAY_STATULERI)
+                    DEFAULT_FALLBACK, PRIMARY_MODELS, ADAY_DB, ADAY_STATULERI,
+                    CHAT_MODEL)
 
 bp = Blueprint("chat", __name__, url_prefix="/api/chat")
 
@@ -197,7 +198,7 @@ def stream():
     # Mesaj gecmisini olustur
     gecmis = chat_mesajlari_getir()
     # Son 6 mesaj (3 soru + 3 cevap) - KV cache kirlenmesini onler
-    son_gecmis = gecmis[:6] if len(gecmis) > 6 else gecmis
+    son_gecmis = gecmis[-6:]
     ollama_msgs = [sistem_mesaji_olustur(df_ozet)]
     for m in son_gecmis:
         ollama_msgs.append({"role": m["role"], "content": m["content"]})
@@ -208,7 +209,7 @@ def stream():
         kesildi = False
         try:
             # Router: soru tipine gore model sec
-            model_secili = model if model else DEFAULT_MODEL  # Frontend'den gelen veya default
+            model_secili = CHAT_MODEL  # v15: chat icin her zaman 7B (ozet 14B kalir)
             for parca in chat_stream(ollama_msgs, model=model_secili, fallback=fallback, durum=durum, profil="analiz"):
                 toplam_yanit += parca
                 yield f"data: {json.dumps({'t': parca}, ensure_ascii=False)}\n\n"

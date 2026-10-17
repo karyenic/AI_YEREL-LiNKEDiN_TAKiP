@@ -12,23 +12,18 @@ from core.database import aday_ekle, adaylari_getir
 # ═══════════════════════════════════════════════════════════
 # YARDIMCI FONKSİYONLAR
 # ═══════════════════════════════════════════════════════════
-def _satir_hash(isim, tarih, aciklama):
-    """Mükerrer kontrolü için hash. Tarih DAHİL EDİLMEZ."""
-    def normalize(s):
-        if not s:
-            return ""
-        s = str(s)
-        s = unicodedata.normalize("NFKD", s)
-        # Görünmez karakterleri temizle
-        for ch in ["\u00a0", "\u200b", "\u200c", "\u200d", "\ufeff", "\u2028", "\u2029"]:
-            s = s.replace(ch, " ")
-        # Tüm whitespace'i tek boşluğa indir + baş/son temizle
-        s = " ".join(s.split())
-        return s.lower()
+def tr_norm(s):
+    """v15: Turkce normalize (metrics.py ve migrate_hash_v15.py ile AYNI)."""
+    if not s:
+        return ""
+    tr = str.maketrans("çğıöşüÇĞİÖŞÜ", "cgiosuCGIOSU")
+    return str(s).translate(tr).lower().strip()
 
-    isim_norm = normalize(isim)
-    aciklama_norm = normalize(aciklama)
-    raw = f"{isim_norm}|{aciklama_norm}".encode("utf-8")
+
+def _satir_hash(isim, linkedin_url):
+    """Mukerrer kontrolu icin hash: isim + linkedin_url.
+    Aciklama ve tarih DAHIL EDILMEZ (v15)."""
+    raw = f"{tr_norm(isim)}|{tr_norm(linkedin_url)}".encode("utf-8")
     return hashlib.md5(raw).hexdigest()
 
 
@@ -79,6 +74,7 @@ def excel_ice_aktar(excel_yolu):
         isim_i = _kolon_bul(headers, "isim", "ad", "adi", "adi soyadi", "name", "aday", "aday ismi")
         aciklama_i = _kolon_bul(headers, "aciklama", "dusunceler", "not", "notes", "thoughts", "detay")
         linkedin_i = _kolon_bul(headers, "linkedin url", "linkedin", "url", "link", "profil")
+        urlsuz = 0  # v15: URL'siz satir sayaci
         if isim_i is None:
             return False, f"Excel'de 'İsim' sütunu bulunamadı. Başlık satırı: {headers}"
 
@@ -109,7 +105,12 @@ def excel_ice_aktar(excel_yolu):
             if linkedin_i is not None and linkedin_i < len(row) and row[linkedin_i]:
                 linkedin_url = str(row[linkedin_i]).strip() or None
 
-            h = _satir_hash(isim, tarih, aciklama)
+            # v15: URL zorunlu - URL'siz satir atlanir
+            if not linkedin_url:
+                urlsuz += 1
+                continue
+
+            h = _satir_hash(isim, linkedin_url)
             ok = aday_ekle(isim, tarih, aciklama, 0, 0, 0,
                            0, 0, 0, 0, kaynak_hash=h,
                            linkedin_url=linkedin_url)
@@ -118,7 +119,7 @@ def excel_ice_aktar(excel_yolu):
             else:
                 atlanan += 1
 
-        return True, f"{eklenen} yeni aday eklendi, {atlanan} zaten mevcuttu."
+        return True, f"{eklenen} yeni aday eklendi, {atlanan} zaten mevcuttu, {urlsuz} URL'siz atlandi."
 
     except Exception as e:
         return False, f"Excel okuma hatası: {e}"

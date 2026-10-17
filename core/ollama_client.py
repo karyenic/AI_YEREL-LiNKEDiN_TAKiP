@@ -93,7 +93,6 @@ Your core objective is to act as a strategic partner: analyzing candidate progre
 - NET HAYIR (aday reddetti, net hayır, asla) → ⛔ Blok (otomatik)
 - YUMUŞAK HAYIR (olumsuz yanıt, henüz evet demedi) → ❄️ DeepFreeze (otomatik)
 
-NOT: Sıcak ve Aktif statüler otomatik değişime karşı korunur.
 Kullanıcı her zaman manuel statü değiştirebilir.
 
 [IMPORTANT]

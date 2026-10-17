@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 chcp 65001 >nul
 title LinkedIn Takip - Flask
 color 0A
@@ -57,7 +57,7 @@ taskkill /f /im "ollama app.exe" >nul 2>&1
 timeout /t 2 /nobreak >nul
 
 echo [1/4] Ollama (IPEX) baslatiliyor...
-start "Ollama-IPEX" /min cmd /c ""%OLLAMA_EXE%" serve"
+start "Ollama-IPEX" /min "C:\AI_YEREL\LiNKEDiN_TAKiP\Ollama_Start.bat"
 
 echo [2/4] Ollama portu bekleniyor (max 45 sn)...
 set /a n=0
